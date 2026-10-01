@@ -12,18 +12,18 @@ type Tool = {
 };
 
 const tools: Tool[] = [
-  { id:"merge", name:"Merge PDF", description:"Combine multiple PDFs in the order you choose.", accept:".pdf,application/pdf", action:"merge" },
-  { id:"split", name:"Split PDF", description:"Extract any page range into a new PDF.", accept:".pdf,application/pdf", needsSpec:true, action:"extract" },
-  { id:"extract", name:"Extract Pages", description:"Create a new PDF from selected pages.", accept:".pdf,application/pdf", needsSpec:true, action:"extract" },
-  { id:"delete", name:"Delete Pages", description:"Remove selected pages from a PDF.", accept:".pdf,application/pdf", needsSpec:true, action:"delete" },
-  { id:"rotate", name:"Rotate PDF", description:"Rotate selected pages by 90, 180 or 270 degrees.", accept:".pdf,application/pdf", needsSpec:true, action:"rotate" },
-  { id:"reorder", name:"Reorder PDF", description:"Enter the complete page order and export it.", accept:".pdf,application/pdf", needsSpec:true, action:"reorder" },
-  { id:"watermark", name:"Watermark", description:"Add a light text watermark to every page.", accept:".pdf,application/pdf", needsText:true, action:"watermark" },
-  { id:"numbers", name:"Page Numbers", description:"Add page numbers to the bottom of every page.", accept:".pdf,application/pdf", action:"pagenumbers" },
-  { id:"images", name:"Images to PDF", description:"Combine JPG and PNG images into one PDF.", accept:"image/png,image/jpeg", action:"images" },
-  { id:"compress", name:"Compress PDF", description:"Optimization pipeline reserved for server-side processing.", accept:".pdf,application/pdf", action:"merge" },
-  { id:"pdfimages", name:"PDF to Images", description:"High-quality page rendering is next in the browser pipeline.", accept:".pdf,application/pdf", action:"extract" },
-  { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", action:"merge" },
+  { id:"merge", name:"Merge PDF", description:"Combine multiple PDFs in the order you choose.", accept:".pdf,application/pdf", available:true, action:"merge" },
+  { id:"split", name:"Split PDF", description:"Extract any page range into a new PDF.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"extract" },
+  { id:"extract", name:"Extract Pages", description:"Create a new PDF from selected pages.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"extract" },
+  { id:"delete", name:"Delete Pages", description:"Remove selected pages from a PDF.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"delete" },
+  { id:"rotate", name:"Rotate PDF", description:"Rotate selected pages by 90, 180 or 270 degrees.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"rotate" },
+  { id:"reorder", name:"Reorder PDF", description:"Enter the complete page order and export it.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"reorder" },
+  { id:"watermark", name:"Watermark", description:"Add a light text watermark to every page.", accept:".pdf,application/pdf", needsText:true, available:true, action:"watermark" },
+  { id:"numbers", name:"Page Numbers", description:"Add page numbers to the bottom of every page.", accept:".pdf,application/pdf", available:true, action:"pagenumbers" },
+  { id:"images", name:"Images to PDF", description:"Combine JPG and PNG images into one PDF.", accept:"image/png,image/jpeg", available:true, action:"images" },
+  { id:"compress", name:"Compress PDF", description:"Server-side optimization pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
+  { id:"pdfimages", name:"PDF to Images", description:"High-quality page rendering pipeline.", accept:".pdf,application/pdf", available:false, action:"extract" },
+  { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
 ];
 
 function download(bytes: Uint8Array, name: string) {
@@ -52,7 +52,7 @@ export default function Home() {
   }
 
   async function run() {
-    if (!active || !files.length) return;
+    if (!active || !active.available || !files.length) return;
     setBusy(true); setStatus("Processing locally…");
     try {
       let bytes: Uint8Array;
@@ -99,7 +99,7 @@ export default function Home() {
           {tools.map(tool => <article key={tool.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 transition hover:border-violet-500/40">
             <div className="mb-7 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">PDF</div>
             <h3 className="font-semibold">{tool.name}</h3><p className="mt-2 min-h-12 text-sm leading-6 text-zinc-500">{tool.description}</p>
-            <button onClick={() => openTool(tool)} className="mt-5 text-sm text-violet-300 hover:text-violet-200">Open tool →</button>
+            <button onClick={() => tool.available && openTool(tool)} disabled={!tool.available} className="mt-5 text-sm text-violet-300 hover:text-violet-200 disabled:cursor-default disabled:text-zinc-600">{tool.available ? "Open tool →" : "Coming soon"}</button>
           </article>)}
         </div>
       </section>
