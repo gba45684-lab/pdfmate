@@ -23,7 +23,7 @@ const tools: Tool[] = [
   { id:"images", name:"Images to PDF", description:"Combine JPG and PNG images into one PDF.", accept:"image/png,image/jpeg", available:true, action:"images" },
   { id:"compress", name:"Compress PDF", description:"Server-side optimization pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
   { id:"pdfimages", name:"PDF to Images", description:"High-quality page rendering pipeline.", accept:".pdf,application/pdf", available:false, action:"extract" },
-  { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
+  { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },\n  { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
 ];
 
 function download(bytes: Uint8Array, name: string) {
@@ -44,15 +44,15 @@ export default function Home() {
   const [text, setText] = useState("");
   const [angle, setAngle] = useState(90);
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("");\n  const [aiPrompt, setAiPrompt] = useState("");\n  const [aiAnswer, setAiAnswer] = useState("");
 
   function openTool(tool: Tool) {
-    setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus("");
+    setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
     requestAnimationFrame(() => input.current?.click());
   }
 
   async function run() {
-    if (!active || !active.available || !files.length) return;
+    if (!active || !active.available || !files.length) return;\n    if (active.id === "ai") {\n      setBusy(true); setStatus("Reading PDF text locally…");\n      try {\n        const extracted = await extractPdfText(files[0]);\n        if (!extracted.trim()) throw new Error("No selectable text was found in this PDF.");\n        if (!aiPrompt.trim()) throw new Error("Enter a question first.");\n        const response = await fetch("/api/ai", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ messages:[{role:"system",content:"Answer only from the supplied PDF text. If the answer is not present, say so."},{role:"user",content:"PDF TEXT:\\n"+extracted+"\\n\\nQUESTION:\\n"+aiPrompt}] }) });\n        const data = await response.json();\n        if (!response.ok) throw new Error(data?.error || "AI request failed.");\n        setAiAnswer(data.text || "No answer returned."); setStatus("AI answer ready.");\n      } catch (error) { setStatus(error instanceof Error ? error.message : "AI processing failed."); } finally { setBusy(false); }\n      return;\n    }
     setBusy(true); setStatus("Processing locally…");
     try {
       let bytes: Uint8Array;
@@ -119,8 +119,8 @@ export default function Home() {
           {files.length > 0 && <div className="mt-3 max-h-24 overflow-auto rounded-xl bg-zinc-900 p-3 text-sm text-zinc-400">{files.map(f => <div key={f.name + f.size} className="truncate">{f.name}</div>)}</div>}
           {active.needsSpec && <><label className="mt-5 block text-sm text-zinc-400">Pages</label><input value={spec} onChange={e => setSpec(e.target.value)} placeholder="Example: 1,3-5,8" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "rotate" && <><label className="mt-5 block text-sm text-zinc-400">Rotation</label><select value={angle} onChange={e => setAngle(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></>}
-          {active.needsText && <><label className="mt-5 block text-sm text-zinc-400">Watermark text</label><input value={text} onChange={e => setText(e.target.value)} placeholder="CONFIDENTIAL" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
-          <button disabled={!files.length || busy} onClick={run} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold disabled:opacity-40">{busy ? "Processing…" : "Process & download"}</button>
+          {active.id === "ai" && <><label className="mt-5 block text-sm text-zinc-400">Ask your PDF</label><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Summarize this document, find the key dates, explain section 3…" className="mt-2 min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/>{aiAnswer && <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-300 whitespace-pre-wrap">{aiAnswer}</div>}</>}\n          {active.needsText && <><label className="mt-5 block text-sm text-zinc-400">Watermark text</label><input value={text} onChange={e => setText(e.target.value)} placeholder="CONFIDENTIAL" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
+          <button disabled={!files.length || busy} onClick={run} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold disabled:opacity-40">{busy ? "Processing…" : active.id === "ai" ? "Ask PDF" : "Process & download"}</button>
           {status && <p className="mt-4 text-center text-sm text-zinc-400">{status}</p>}
           <p className="mt-5 text-center text-xs text-zinc-600">Browser-supported operations run locally. Features requiring encryption, OCR or heavy conversion will use the future secure server pipeline.</p>
         </div>
