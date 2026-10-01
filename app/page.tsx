@@ -8,7 +8,7 @@ import {
 import { extractPdfText } from "../lib/pdf-ai";
 
 type Tool = {
-  id: string; name: string; description: string; accept: string;
+  id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images";
 };
 
