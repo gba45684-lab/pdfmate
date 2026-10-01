@@ -122,3 +122,13 @@ export async function imagesToPdf(files: File[]) {
   }
   return out.save();
 }
+
+
+export async function getPdfPageCount(file: File) {
+  const src = await loadPdf(file);
+  return src.getPageCount();
+}
+
+export async function rotateAllPages(file: File, angle: number) {
+  return rotatePages(file, "", angle);
+}
