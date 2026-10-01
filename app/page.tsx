@@ -132,7 +132,7 @@ export default function Home() {
               <button onClick={() => setActive(null)} className="rounded-lg px-2 py-1 text-zinc-400 hover:bg-zinc-900">✕</button>
             </div>
             <button onClick={() => input.current?.click()} className="mt-6 w-full rounded-2xl border border-dashed border-zinc-700 px-5 py-10 text-sm hover:border-violet-400">
-              {files.length ? \`\${files.length} file(s) selected\` : "Choose files"}
+              {files.length ? String(files.length) + " file(s) selected" : "Choose files"}
             </button>
             {files.length > 0 && <div className="mt-3 max-h-32 space-y-1 overflow-auto text-sm text-zinc-400">{files.map(f => <div key={f.name + f.size} className="truncate">{f.name}</div>)}</div>}
             <button disabled={!files.length || busy} onClick={process} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
