@@ -111,7 +111,7 @@ export default function Home() {
       </section>
 
       <section id="tools" className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">PDF tools</h2><p className="mt-2 text-zinc-500">Core document operations are ready. Server-powered features can use the same workspace.</p></div><span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-500">12 tools</span></div>
+        <div className="flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">PDF tools</h2><p className="mt-2 text-zinc-500">Core document operations are ready. Server-powered features can use the same workspace.</p></div><span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-500">13 tools</span></div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {tools.map(tool => <article key={tool.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 transition hover:border-violet-500/40">
             <div className="mb-7 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">PDF</div>
