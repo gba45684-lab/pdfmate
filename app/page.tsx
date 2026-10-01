@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import {
   addPageNumbers, addWatermark, deletePages, extractPages, imagesToPdf,
   mergePdfs, reorderPages, rotatePages
-} from "@/lib/pdf-tools";
+} from "../lib/pdf-tools";
 
 type Tool = {
   id: string; name: string; description: string; accept: string;
