@@ -212,8 +212,21 @@ export async function fillPdfForm(file: File, values: Record<string, string>) {
     const name = field.getName();
     const value = values[name];
     if (typeof value !== "string") continue;
-    if (typeof (field as { setText?: (value: string) => void }).setText === "function") {
-      (field as { setText: (value: string) => void }).setText(value);
+    const candidate = field as {
+      setText?: (value: string) => void;
+      check?: () => void;
+      uncheck?: () => void;
+      select?: (value: string) => void;
+      selectOption?: (value: string) => void;
+    };
+    if (typeof candidate.setText === "function") {
+      candidate.setText(value);
+    } else if (typeof candidate.check === "function" && typeof candidate.uncheck === "function") {
+      value.toLowerCase() === "true" || value === "1" || value.toLowerCase() === "yes" ? candidate.check() : candidate.uncheck();
+    } else if (typeof candidate.select === "function") {
+      candidate.select(value);
+    } else if (typeof candidate.selectOption === "function") {
+      candidate.selectOption(value);
     }
   }
   return src.save();
