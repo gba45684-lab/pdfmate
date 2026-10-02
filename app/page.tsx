@@ -5,7 +5,7 @@ import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
   mergePdfs, reorderPages, rotatePages
 } from "../lib/pdf-tools";
-import { pdfToImages } from "../lib/pdf-render";
+import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 
 type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten";
@@ -59,6 +59,9 @@ export default function Home() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
   const [signatureReady, setSignatureReady] = useState(false);
+  const [previews, setPreviews] = useState<PdfPagePreview[]>([]);
+  const [order, setOrder] = useState<number[]>([]);
+  const [dragPage, setDragPage] = useState<number | null>(null);
 
   useEffect(() => {
     if (!active || active.id !== "sign" || !canvas.current) return;
@@ -74,6 +77,30 @@ export default function Home() {
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
     setSignatureReady(false);
     requestAnimationFrame(() => input.current?.click());
+  }
+
+  async function loadOrganizer(file: File) {
+    setStatus("Creating page previews locally…");
+    try {
+      const pages = await renderPdfPreviews(file);
+      setPreviews(pages);
+      setOrder(pages.map((page) => page.index));
+      setStatus(pages.length < (await import("pdfjs-dist/legacy/build/pdf.mjs")).getDocument ? "Preview ready." : "Preview ready.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not render page previews.");
+    }
+  }
+
+  function movePage(from: number, to: number) {
+    setOrder((current) => {
+      const next = [...current];
+      const fromIndex = next.indexOf(from);
+      const toIndex = next.indexOf(to);
+      if (fromIndex < 0 || toIndex < 0) return current;
+      next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, from);
+      return next;
+    });
   }
 
   function point(e: React.PointerEvent<HTMLCanvasElement>) {
@@ -201,6 +228,11 @@ export default function Home() {
           <div className="flex items-start justify-between"><div><h2 className="text-xl font-semibold">{active.name}</h2><p className="mt-1 text-sm text-zinc-500">{active.description}</p></div><button onClick={() => setActive(null)} className="rounded-lg px-2 py-1 text-zinc-400">✕</button></div>
           <button onClick={() => input.current?.click()} className="mt-6 w-full rounded-2xl border border-dashed border-zinc-700 px-5 py-9 text-sm hover:border-violet-400">{files.length ? String(files.length) + " file(s) selected — choose again" : "Choose files"}</button>
           {files.length > 0 && <div className="mt-3 max-h-24 overflow-auto rounded-xl bg-zinc-900 p-3 text-sm text-zinc-400">{files.map(f => <div key={f.name + f.size} className="truncate">{f.name}</div>)}</div>}
+          {active.id === "reorder" && files[0] && <button onClick={() => loadOrganizer(files[0])} className="mt-4 w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Preview & arrange pages</button>}
+          {active.id === "reorder" && order.length > 0 && <div className="mt-4 grid max-h-72 grid-cols-3 gap-3 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 sm:grid-cols-4">
+            {order.map((pageNumber) => { const preview = previews.find((item) => item.index === pageNumber); return <div key={pageNumber} draggable onDragStart={() => setDragPage(pageNumber)} onDragOver={(e) => e.preventDefault()} onDrop={() => { if (dragPage !== null) movePage(dragPage, pageNumber); setDragPage(null); }} className="cursor-grab rounded-lg border border-zinc-800 bg-zinc-950 p-2 active:cursor-grabbing"><div className="aspect-[3/4] overflow-hidden rounded bg-white">{preview && <img src={preview.url} alt={"Page " + pageNumber} className="h-full w-full object-contain"/></div><div className="pt-2 text-center text-xs text-zinc-400">Page {pageNumber}</div></div>; })}
+          </div>}
+          {active.id === "reorder" && order.length > 0 && <button onClick={() => setSpec(order.join(","))} className="mt-3 w-full rounded-xl border border-violet-500/40 px-4 py-2 text-sm text-violet-300">Use this page order</button>}
           {active.needsSpec && <><label className="mt-5 block text-sm text-zinc-400">{active.id === "sign" ? "Pages to sign (blank = every page)" : "Pages"}</label><input value={spec} onChange={e => setSpec(e.target.value)} placeholder="Example: 1,3-5,8" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "crop" && <><label className="mt-5 block text-sm text-zinc-400">Margin to remove (points)</label><input value={spec} onChange={e => setSpec(e.target.value)} inputMode="numeric" placeholder="24" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "rotate" && <><label className="mt-5 block text-sm text-zinc-400">Rotation</label><select value={angle} onChange={e => setAngle(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></>}
