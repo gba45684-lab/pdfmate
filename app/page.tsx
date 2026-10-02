@@ -248,7 +248,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
             ? "Optimize PDF or Edit PDF — selectable text is present, so OCR is usually unnecessary."
             : "OCR PDF — little/no selectable text was detected, so this appears suitable for OCR.";
         setAutoReport({...info, recommendation});
-        try { await saveCloudDocument(files[0]); } catch {}
+
       setStatus("Auto analysis complete.");
         return;
       }
