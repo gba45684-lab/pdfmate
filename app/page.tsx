@@ -167,6 +167,12 @@ export default function Home() {
         setStatus("Flattened PDF created locally.");
         return;
       }
+      if (active.action === "resize") {
+        const bytes = await resizePdf(files[0], pageSize);
+        downloadPdf(bytes, "pdfmate-" + pageSize + ".pdf");
+        setStatus("Resized PDF created locally.");
+        return;
+      }
       if (active.action === "sign") {
         if (!signatureReady || !canvas.current) throw new Error("Draw your signature first.");
         const signature = canvas.current.toDataURL("image/png");
