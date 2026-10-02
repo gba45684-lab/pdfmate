@@ -76,6 +76,8 @@ export default function Home() {
   const [ocrProgress, setOcrProgress] = useState(0);
 const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [ocrSearchable, setOcrSearchable] = useState(true);
+  const [cloudDocs, setCloudDocs] = useState<{id:string;name:string;size_bytes:number;created_at:string}[]>([]);
+  const [cloudLoading, setCloudLoading] = useState(false);
   const [protectPassword, setProtectPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
@@ -95,6 +97,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   }, []);
 
   useEffect(() => {
+    loadCloudDocs();
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
   }, []);
 
@@ -107,6 +110,15 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     ctx.strokeStyle = "#111827"; ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.lineJoin = "round";
     setSignatureReady(false);
   }, [active]);
+
+  async function loadCloudDocs() {
+    setCloudLoading(true);
+    try { const response=await fetch("/api/documents"); const data=await response.json(); if(response.ok) setCloudDocs(data.documents||[]); } finally { setCloudLoading(false); }
+  }
+  async function saveCloudDocument(file: File) {
+    const response=await fetch("/api/documents",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name,size_bytes:file.size})});
+    if(response.ok) await loadCloudDocs();
+  }
 
   function openTool(tool: Tool) {
     setRecentTools(prev => { const next=[tool.name,...prev.filter(x=>x!==tool.name)].slice(0,6); try { localStorage.setItem("pdfmate-recent-tools", JSON.stringify(next)); } catch {} return next; });
@@ -325,7 +337,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       <section id="workspace" className="mx-auto max-w-7xl px-6 pb-16">
         <div className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-6">
           <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-violet-300">Workspace</p><h2 className="mt-2 text-2xl font-semibold">Quick access</h2></div><a href="/auth" className="text-sm text-violet-300">Account & cloud history →</a></div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5"><div className="flex items-center justify-between"><div><div className="text-sm font-semibold">Cloud history</div><div className="text-xs text-zinc-600">Available after Supabase sign-in</div></div><button onClick={loadCloudDocs} className="rounded-lg border border-zinc-700 px-3 py-2 text-xs">{cloudLoading?"Loading…":"Refresh"}</button></div><div className="mt-4 space-y-2">{cloudDocs.slice(0,5).map(d=><div key={d.id} className="flex justify-between rounded-xl bg-zinc-950 p-3 text-sm"><span className="truncate">{d.name}</span><span className="text-zinc-600">{Math.max(1,Math.round(d.size_bytes/1024))} KB</span></div>)}{!cloudDocs.length&&<div className="text-sm text-zinc-600">No cloud documents yet.</div>}</div></div><div className="mt-6 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Available tools</div><div className="mt-2 text-3xl font-bold">{tools.filter(t=>t.available).length}</div><div className="mt-1 text-xs text-zinc-600">Browser + AI workspace</div></div>
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Recent tools</div><div className="mt-3 space-y-2">{recentTools.slice(0,3).map(x=><div key={x} className="text-sm text-zinc-300">{x}</div>)}{!recentTools.length&&<div className="text-sm text-zinc-600">Your recent tools will appear here.</div>}</div></div>
             <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Privacy mode</div><div className="mt-2 text-lg font-semibold">Local-first</div><div className="mt-1 text-xs text-zinc-600">Cloud features are opt-in.</div></div>
