@@ -231,7 +231,7 @@ export type PdfAnnotation =
   | { type: "text"; page: number; x: number; y: number; text: string; size?: number }
   | { type: "highlight"; page: number; x: number; y: number; width: number; height: number }
   | { type: "rect"; page: number; x: number; y: number; width: number; height: number }
-  | { type: "line"; page: number; x1: number; y1: number; x2: number; y2: number };
+  | { type: "line"; page: number; x1: number; y1: number; x2: number; y2: number }\n  | { type: "whiteout"; page: number; x: number; y: number; width: number; height: number };
 
 export async function annotatePdf(file: File, annotations: PdfAnnotation[]) {
   const src = await loadPdf(file);
