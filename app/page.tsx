@@ -184,10 +184,10 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   function handleFiles(event: React.ChangeEvent<HTMLInputElement>) {
     const selected=Array.from(event.target.files||[]); if(!active||!selected.length)return;
     const isImageTool=active.id==="images", isOfficeTool=active.id==="office";
-    const valid=selected.filter(file=>{const lower=file.name.toLowerCase(); if(isImageTool)return file.type==="image/png"||file.type==="image/jpeg"||/\\.(png|jpe?g)$/.test(lower); if(isOfficeTool)return /\\.(doc|docx|xls|xlsx|ppt|pptx)$/.test(lower); return file.type==="application/pdf"||lower.endsWith(".pdf");});
+    const valid=selected.filter(file=>{const lower=file.name.toLowerCase(); if(isImageTool)return file.type==="image/png"||file.type==="image/jpeg"||/\.(png|jpe?g)$/.test(lower); if(isOfficeTool)return /\.(doc|docx|xls|xlsx|ppt|pptx)$/.test(lower); return file.type==="application/pdf"||lower.endsWith(".pdf");});
     const multiple=active.id==="merge"||active.id==="images", picked=multiple?valid:valid.slice(0,1);
     if(!picked.length){setFiles([]);setStatus(isImageTool?"Select JPG or PNG images.":isOfficeTool?"Select a DOC, DOCX, XLS, XLSX, PPT or PPTX file.":"Select a PDF file.");event.target.value="";return;}
-    setFiles(picked);setResult(null);setResultUrl("");setPreviews([]);setOrder([]);setStatus(multiple&&valid.length!==selected.length?"Unsupported files were skipped.":picked.length+" file"+(picked.length===1?"":"s")+" ready.");
+    if(resultUrl) URL.revokeObjectURL(resultUrl); setFiles(picked);setResult(null);setResultUrl("");setPreviews([]);setOrder([]);setStatus(multiple&&valid.length!==selected.length?"Unsupported files were skipped.":picked.length+" file"+(picked.length===1?"":"s")+" ready.");
   }
 
   async function loadOrganizer(file: File) {
