@@ -86,7 +86,10 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [status, setStatus] = useState("");
   const [redactWidth, setRedactWidth] = useState(180);
   const [redactHeight, setRedactHeight] = useState(40);
-  const [recentTools, setRecentTools] = useState<string[]>([]);
+  const [recentTools, setRecentTools] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("pdfmate-recent-tools") || "[]"); } catch { return []; }
+  });
   const [autoReport, setAutoReport] = useState<{pages:number;formFields:number;portrait:number;landscape:number;recommendation:string}|null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
@@ -95,9 +98,6 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [order, setOrder] = useState<number[]>([]);
   const [dragPage, setDragPage] = useState<number | null>(null);
 
-  useEffect(() => {
-    try { setRecentTools(JSON.parse(localStorage.getItem("pdfmate-recent-tools") || "[]")); } catch {}
-  }, []);
 
   useEffect(() => {
     loadCloudDocs();
