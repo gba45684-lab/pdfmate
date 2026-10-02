@@ -168,7 +168,8 @@ export async function cropPages(file: File, margin = 24) {
 
 export async function flattenPdf(file: File) {
   const src = await loadPdf(file);
-  src.getForm().flatten();
+  const form = src.getForm();
+  if (form.getFields().length) form.flatten();
   return src.save();
 }
 
