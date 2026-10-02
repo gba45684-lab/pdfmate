@@ -85,7 +85,7 @@ export default function Home() {
       const pages = await renderPdfPreviews(file);
       setPreviews(pages);
       setOrder(pages.map((page) => page.index));
-      setStatus(pages.length < (await import("pdfjs-dist/legacy/build/pdf.mjs")).getDocument ? "Preview ready." : "Preview ready.");
+      setStatus(pages.length + " page previews ready.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not render page previews.");
     }
