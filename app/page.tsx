@@ -8,7 +8,7 @@ import {
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
-import { ocrPdf } from "../lib/pdf-ocr";
+import { ocrPdf, ocrPdfSearchable } from "../lib/pdf-ocr";
 
 type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact";
 type Tool = {
@@ -73,6 +73,7 @@ export default function Home() {
   const [ocrText, setOcrText] = useState("");
   const [ocrProgress, setOcrProgress] = useState(0);
 const [ocrLanguage, setOcrLanguage] = useState("eng");
+  const [ocrSearchable, setOcrSearchable] = useState(true);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [redactWidth, setRedactWidth] = useState(180);
@@ -107,7 +108,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   function openTool(tool: Tool) {
     setRecentTools(prev => { const next=[tool.name,...prev.filter(x=>x!==tool.name)].slice(0,6); try { localStorage.setItem("pdfmate-recent-tools", JSON.stringify(next)); } catch {} return next; });
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng");
+    setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng"); setOcrSearchable(true);
     requestAnimationFrame(() => input.current?.click());
   }
 
@@ -227,6 +228,8 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       }
       if (active.action === "ocr") {
         setOcrText(""); setOcrProgress(0);
+        const bytes = ocrSearchable ? await ocrPdfSearchable(files[0], 20, setOcrProgress, ocrLanguage) : null;
+        if (bytes) { downloadPdf(bytes, "pdfmate-searchable-ocr.pdf"); setStatus("Searchable OCR PDF created locally."); return; }
         const pages = await ocrPdf(files[0], 20, setOcrProgress, ocrLanguage);
         const text = pages.map(page => "--- Page " + page.page + " ---\\n" + page.text).join("\\n\\n");
         setOcrText(text);
@@ -296,8 +299,8 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     <main className="min-h-screen bg-[#09090b]">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
         <div className="text-xl font-bold">PDF<span className="text-violet-400">Mate</span></div>
-        <nav className="hidden gap-7 text-sm text-zinc-400 md:flex"><a href="#tools">Tools</a><a href="#workflow">How it works</a><a href="#privacy">Privacy</a></nav>
-        <button className="rounded-xl border border-zinc-700 px-4 py-2 text-sm">Sign in</button>
+        <nav className="hidden gap-7 text-sm text-zinc-400 md:flex"><a href="#tools">Tools</a><a href="#workspace">Workspace</a><a href="#workflow">How it works</a><a href="#privacy">Privacy</a></nav>
+        <a href="/auth" className="rounded-xl border border-zinc-700 px-4 py-2 text-sm">Sign in</a>
       </header>
 
       <section className="mx-auto max-w-5xl px-6 pb-20 pt-16 text-center">
@@ -310,6 +313,16 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         </button>
       </section>
 
+      <section id="workspace" className="mx-auto max-w-7xl px-6 pb-16">
+        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-6">
+          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-violet-300">Workspace</p><h2 className="mt-2 text-2xl font-semibold">Quick access</h2></div><a href="/auth" className="text-sm text-violet-300">Account & cloud history →</a></div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Available tools</div><div className="mt-2 text-3xl font-bold">{tools.filter(t=>t.available).length}</div><div className="mt-1 text-xs text-zinc-600">Browser + AI workspace</div></div>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Recent tools</div><div className="mt-3 space-y-2">{recentTools.slice(0,3).map(x=><div key={x} className="text-sm text-zinc-300">{x}</div>)}{!recentTools.length&&<div className="text-sm text-zinc-600">Your recent tools will appear here.</div>}</div></div>
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Privacy mode</div><div className="mt-2 text-lg font-semibold">Local-first</div><div className="mt-1 text-xs text-zinc-600">Cloud features are opt-in.</div></div>
+          </div>
+        </div>
+      </section>
       <section id="tools" className="mx-auto max-w-7xl px-6 pb-24">
         <div className="flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">PDF tools</h2><p className="mt-2 text-zinc-500">Browser operations are ready. Secure server features can use the same workspace.</p></div><span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-500">{tools.length} tools</span></div>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -357,7 +370,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   </div>}
   {autoReport && <div className="mt-4 rounded-xl border border-violet-500/20 bg-zinc-950 p-4"><div className="text-xs uppercase tracking-wider text-violet-300">Recommended next step</div><div className="mt-2 font-medium">{autoReport.recommendation}</div></div>}
 </div>}
-{active.id === "ocr" && <div className="mt-5"><p className="text-sm text-zinc-400">OCR runs in your browser. Up to 20 pages are processed per run.</p><select value={ocrLanguage} onChange={e=>setOcrLanguage(e.target.value)} className="mt-3 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm"><option value="eng">English</option><option value="eng+hin">English + Hindi</option></select><div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-800"><div className="h-full bg-violet-500 transition-all" style={{width: Math.round(ocrProgress*100)+"%"}} /></div>{ocrText && <textarea value={ocrText} readOnly className="mt-4 h-56 w-full rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-300" />}</div>}{active.id === "forms" && <div className="mt-5">
+{active.id === "ocr" && <div className="mt-5"><p className="text-sm text-zinc-400">OCR runs in your browser. Up to 20 pages are processed per run.</p><select value={ocrLanguage} onChange={e=>setOcrLanguage(e.target.value)} className="mt-3 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm"><option value="eng">English</option><option value="eng+hin">English + Hindi</option></select><label className="mt-3 flex items-center gap-2 text-sm text-zinc-400"><input type="checkbox" checked={ocrSearchable} onChange={e=>setOcrSearchable(e.target.checked)}/> Create searchable OCR PDF</label><div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-800"><div className="h-full bg-violet-500 transition-all" style={{width: Math.round(ocrProgress*100)+"%"}} /></div>{ocrText && <textarea value={ocrText} readOnly className="mt-4 h-56 w-full rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-300" />}</div>}{active.id === "forms" && <div className="mt-5">
 <button type="button" onClick={async()=>{try{setStatus("Detecting form fields…");const fields=await getPdfFormFields(files[0]);setFormFields(fields);setFormValues(Object.fromEntries(fields.map(f=>[f.name,""])));setStatus(fields.length+" fillable field(s) detected.");}catch(e){setStatus(e instanceof Error?e.message:"Could not inspect PDF form.");}}} className="w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Detect form fields</button>
 <div className="mt-3 space-y-3">{formFields.map(field=><label key={field.name} className="block text-sm text-zinc-400">{field.name}{/CheckBox/i.test(field.type) ? <select value={formValues[field.name]||""} onChange={e=>setFormValues(v=>({...v,[field.name]:e.target.value}))} className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white"><option value="">Unchecked</option><option value="true">Checked</option></select> : <input value={formValues[field.name]||""} onChange={e=>setFormValues(v=>({...v,[field.name]:e.target.value}))} className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white" placeholder={field.type}/>}</label>)}</div>
 </div>}{active.id === "edit" && <div className="mt-5 space-y-3">
@@ -367,7 +380,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 <div className="grid grid-cols-2 gap-3"><input type="number" value={editX} onChange={e=>setEditX(Number(e.target.value)||0)} placeholder="X" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={editY} onChange={e=>setEditY(Number(e.target.value)||0)} placeholder="Y" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/></div><button type="button" onClick={async()=>{try{setStatus("Rendering editor preview…");const pages=await renderPdfPreviews(files[0],60);setPreviews(pages);setStatus("Click the page preview to place the annotation.");}catch(e){setStatus(e instanceof Error?e.message:"Could not render editor preview.");}}} className="w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Load visual editor</button>{previews.filter(p=>p.index===editPage).map(p=><button type="button" key={p.index} onClick={e=>{const r=(e.currentTarget as HTMLElement).getBoundingClientRect();const scale=.55;setEditX(Math.round((e.clientX-r.left)/scale));setEditY(Math.round((r.height-(e.clientY-r.top))/scale));}} className="block w-full overflow-hidden rounded-lg border border-zinc-700 hover:border-violet-400"><img src={p.url} alt={"Page "+p.index+" preview"} className="w-full"/></button>)}<p className="text-xs text-zinc-600">Click the preview to place the selected edit tool. Coordinates are stored in PDF points.</p>
 </div>}{active.id === "resize" && <><label className="mt-5 block text-sm text-zinc-400">Target page size</label><select value={pageSize} onChange={e => setPageSize(e.target.value as "a4"|"letter"|"legal"|"a5")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option><option value="a5">A5</option></select><p className="mt-2 text-xs text-zinc-600">Pages are proportionally fitted and centered on the selected size.</p></>}{active.id === "pdfimages" && <><label className="mt-5 block text-sm text-zinc-400">Image format</label><select value={imageFormat} onChange={e => setImageFormat(e.target.value as "png"|"jpeg")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="png">PNG</option><option value="jpeg">JPG</option></select></>}
           {active.id === "sign" && <div className="mt-5"><label className="block text-sm text-zinc-400">Draw your signature</label><canvas ref={canvas} width={900} height={260} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} className="mt-2 h-40 w-full touch-none rounded-xl border border-zinc-700 bg-white"/><button type="button" onClick={() => { const c=canvas.current,ctx=c?.getContext("2d"); if(c&&ctx){ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);setSignatureReady(false);} }} className="mt-2 text-sm text-zinc-500 hover:text-zinc-300">Clear signature</button></div>}
-          {active.id === "ai" && <><label className="mt-5 block text-sm text-zinc-400">Ask your PDF</label><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Summarize this document, find the key dates, explain section 3…" className="mt-2 min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/>{aiAnswer && <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-300 whitespace-pre-wrap">{aiAnswer}</div>}</>}
+          {active.id === "ai" && <><label className="mt-5 block text-sm text-zinc-400">Ask your PDF</label><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Summarize this document, find the key dates, explain section 3…" className="mt-2 min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/>{active.id === "ai" && <div className="mt-3 flex flex-wrap gap-2">{["Summarize the document in 5 bullet points.","Extract all important dates, deadlines and amounts.","List the key sections and explain each briefly."].map(q=><button key={q} type="button" onClick={()=>setAiPrompt(q)} className="rounded-full border border-zinc-800 px-3 py-2 text-xs text-zinc-400 hover:border-violet-500 hover:text-violet-300">{q.split(".")[0]}</button>)}</div>}{aiAnswer && <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-300 whitespace-pre-wrap">{aiAnswer}</div>}</>}
           {active.needsText && <><label className="mt-5 block text-sm text-zinc-400">Watermark text</label><input value={text} onChange={e => setText(e.target.value)} placeholder="CONFIDENTIAL" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           <button disabled={!files.length || busy} onClick={run} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold disabled:opacity-40">{busy ? "Processing…" : active.id === "ai" ? "Ask PDF" : "Process & download"}</button>
           {status && <p className="mt-4 text-center text-sm text-zinc-400">{status}</p>}
