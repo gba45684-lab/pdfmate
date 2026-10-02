@@ -202,6 +202,31 @@ export async function addSignature(file: File, signatureDataUrl: string, pageSpe
   return src.save();
 }
 
+export type PdfAnnotation =
+  | { type: "text"; page: number; x: number; y: number; text: string; size?: number }
+  | { type: "highlight"; page: number; x: number; y: number; width: number; height: number }
+  | { type: "rect"; page: number; x: number; y: number; width: number; height: number }
+  | { type: "line"; page: number; x1: number; y1: number; x2: number; y2: number };
+
+export async function annotatePdf(file: File, annotations: PdfAnnotation[]) {
+  const src = await loadPdf(file);
+  const font = await src.embedFont(StandardFonts.Helvetica);
+  for (const item of annotations) {
+    const page = src.getPage(item.page);
+    if (!page) continue;
+    if (item.type === "text") {
+      page.drawText(item.text, { x: item.x, y: item.y, size: Math.max(6, Math.min(48, item.size || 16)), font, color: rgb(0.08, 0.08, 0.12) });
+    } else if (item.type === "highlight") {
+      page.drawRectangle({ x: item.x, y: item.y, width: item.width, height: item.height, color: rgb(1, 0.88, 0.2), opacity: 0.28, borderWidth: 0 });
+    } else if (item.type === "rect") {
+      page.drawRectangle({ x: item.x, y: item.y, width: item.width, height: item.height, borderColor: rgb(0.25, 0.2, 0.75), borderWidth: 2 });
+    } else {
+      page.drawLine({ start: { x: item.x1, y: item.y1 }, end: { x: item.x2, y: item.y2 }, color: rgb(0.08, 0.08, 0.12), thickness: 2 });
+    }
+  }
+  return src.save();
+}
+
 export async function rotateAllPages(file: File, angle: number) {
   return rotatePages(file, "", angle);
 }
