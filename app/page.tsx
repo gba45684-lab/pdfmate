@@ -517,6 +517,4 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       </div>}
     </main>
   );
-    </main>
-  );
 }
