@@ -91,3 +91,22 @@ input:focus,select:focus,textarea:focus{
   html{scroll-behavior:auto}
   *,*:before,*:after{transition:none!important;animation:none!important}
 }
+
+/* Mobile app UX: safe areas, touch targets, clean vertical rhythm, bottom navigation. */
+html,body{overflow-x:hidden}
+button,a,input,select,textarea{touch-action:manipulation}
+@media(max-width:767px){
+  body{font-size:14px}
+  .mobile-bottom-nav{padding-bottom:max(8px,env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgba(16,24,40,.08)}
+  header.sticky{box-shadow:0 1px 0 rgba(16,24,40,.05),0 6px 18px rgba(16,24,40,.045)}
+  #dashboard>div:first-child:after{width:120px;height:120px;right:-20px;top:-18px}
+  #tools .group{min-height:142px}
+  #tools .group h3{line-height:1.25}
+  #workflow{box-shadow:0 14px 34px rgba(32,16,54,.14)}
+  input,select,textarea{min-height:44px}
+}
+@media(max-width:374px){
+  #tools .group{min-height:132px}
+  #tools .group p{display:none}
+}
+@media(min-width:768px){.mobile-bottom-nav{display:none}}
