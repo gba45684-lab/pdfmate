@@ -102,6 +102,39 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   useEffect(() => {
     loadCloudDocs();
+
+    // Native APK loads the production site. Do not let an old service-worker
+    // cache pin the WebView to a previous deployment. On every fresh app launch,
+    // clear native WebView caches once, then reload with a cache-busting query.
+    const capacitor = (window as Window & {
+      Capacitor?: { isNativePlatform?: () => boolean };
+    }).Capacitor;
+    const isNativeApp = capacitor?.isNativePlatform?.() === true;
+
+    if (isNativeApp) {
+      const refreshKey = "pdfmate-native-launch-refresh-v1";
+      if (!sessionStorage.getItem(refreshKey)) {
+        sessionStorage.setItem(refreshKey, "1");
+        const refresh = async () => {
+          try {
+            if ("serviceWorker" in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(registrations.map((registration) => registration.unregister()));
+            }
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((key) => caches.delete(key)));
+            }
+          } catch {}
+          const url = new URL(window.location.href);
+          url.searchParams.set("pdfmate_refresh", String(Date.now()));
+          window.location.replace(url.toString());
+        };
+        void refresh();
+      }
+      return;
+    }
+
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => {
         registration.update().catch(() => {});
