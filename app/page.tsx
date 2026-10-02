@@ -335,7 +335,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         return;
       }
       let bytes: Uint8Array; let name: string;
-      switch (active.action) {
+      switch (active.action as string) {
         case "merge": bytes = await mergePdfs(files); name = "pdfmate-merged.pdf"; break;
         case "images": bytes = await imagesToPdf(files); name = "pdfmate-images.pdf"; break;
         case "extract": bytes = await extractPages(files[0], spec); name = "pdfmate-extract.pdf"; break;
