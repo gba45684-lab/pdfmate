@@ -67,4 +67,8 @@ function bindHome(){
  document.querySelector(".new").onclick=()=>openTool(0);
 }
 render();bindHome();
+// Keep every preview navigation action inside the standalone UI; never redirect to the production app.
+document.querySelector(".logo").onclick=e=>{e.preventDefault();home()};
+document.querySelector(".new").onclick=e=>{e.preventDefault();openTool(0)};
+document.querySelectorAll(".bottom a").forEach((a,i)=>a.onclick=e=>{e.preventDefault();if(i===0)home();else if(i===1){home();setTimeout(()=>document.getElementById("tools")?.scrollIntoView({behavior:"smooth"}),0)}else if(i===2){home();setTimeout(()=>document.getElementById("workflow")?.scrollIntoView({behavior:"smooth"}),0)}else openTool(0)});
 </script>
