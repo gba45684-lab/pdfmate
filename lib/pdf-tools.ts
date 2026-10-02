@@ -212,8 +212,8 @@ export async function fillPdfForm(file: File, values: Record<string, string>) {
     const name = field.getName();
     const value = values[name];
     if (typeof value !== "string") continue;
-    if ("setText" in field && typeof field.setText === "function") {
-      field.setText(value);
+    if (typeof (field as { setText?: (value: string) => void }).setText === "function") {
+      (field as { setText: (value: string) => void }).setText(value);
     }
   }
   return src.save();
