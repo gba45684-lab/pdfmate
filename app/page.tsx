@@ -248,20 +248,20 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         if (editPage < 1) throw new Error("Enter a valid page number.");
         const bytes = await secureRedactPdf(files[0], [{page: editPage - 1, x: editX, y: editY, width: redactWidth, height: redactHeight}]);
         deliverPdf(bytes, "pdfmate-redacted.pdf");
-        setStatus("Redacted PDF created locally. Verify the exported file before sharing.");
+        setStatus("Redacted PDF result is ready. Verify the exported file before sharing.");
         return;
       }
       if (active.action === "office") {
         const form=new FormData(); form.append("file",files[0]); form.append("action","office-to-pdf");
         const response=await fetch("/api/pdf/worker",{method:"POST",body:form});
         if(!response.ok){const data=await response.json().catch(()=>null);throw new Error(data?.error||"Office conversion failed.");}
-        deliverBlob(await response.blob(), "pdfmate-converted.pdf"); setStatus("Converted PDF downloaded."); return;
+        deliverBlob(await response.blob(), "pdfmate-converted.pdf"); setStatus("Converted PDF result is ready."); return;
       }
       if (active.action === "compress") {
         const form=new FormData(); form.append("file",files[0]); form.append("action","compress");
         const response=await fetch("/api/pdf/worker",{method:"POST",body:form});
         if(!response.ok){const data=await response.json().catch(()=>null);throw new Error(data?.error||"Secure optimization failed.");}
-        deliverBlob(await response.blob(), "pdfmate-optimized.pdf"); setStatus("Optimized PDF downloaded."); return;
+        deliverBlob(await response.blob(), "pdfmate-optimized.pdf"); setStatus("Optimized PDF result is ready."); return;
       }
       if (active.action === "protect") {
         if (!protectPassword || protectPassword.length < 8) throw new Error("Use a password of at least 8 characters.");
@@ -272,7 +272,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         if (!response.ok) { const data=await response.json().catch(()=>null); throw new Error(data?.error || "Secure PDF protection failed."); }
         const protectedPdf = await response.blob();
         deliverBlob(protectedPdf, "pdfmate-protected.pdf");
-        setStatus("Protected PDF downloaded.");
+        setStatus("Protected PDF result is ready.");
         return;
       }
       if (active.action === "auto") {
@@ -310,7 +310,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         images.forEach(({ name, blob }) => zip.file(name, blob));
         const archive = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
         deliverBlob(archive, "pdfmate-images.zip");
-        setStatus(images.length + " image(s) packaged into a ZIP locally.");
+        setStatus(images.length + " image(s) are ready in the ZIP result.");
         return;
       }      if (active.action === "crop") {
         const bytes = await cropPages(files[0], Number(spec) || 24);
