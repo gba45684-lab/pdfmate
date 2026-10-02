@@ -63,3 +63,11 @@ Production checks:
 These patterns were informed by public open-source PDF projects including ClawPDF, PDF Tools Suite, Paperless PDF and browser PDF editors; PDFMate implements the useful ideas independently rather than copying project code.
 
 - Local recent-tool history for faster repeat workflows
+
+### Cloud workspace foundation
+- Supabase magic-link authentication
+- Row-level-secured document metadata
+- Private Supabase Storage upload URL API
+- Storage owner policy in `supabase/schema.sql`
+
+Configure the Supabase project and private `documents` bucket before enabling cloud uploads.
