@@ -61,7 +61,7 @@ export default function Home() {
   const [angle, setAngle] = useState(90);
   const [imageFormat, setImageFormat] = useState<"png"|"jpeg">("png");
   const [pageSize, setPageSize] = useState<"a4"|"letter"|"legal"|"a5">("a4");
-  const [editType, setEditType] = useState<"text"|"highlight"|"rect"|"line">("text");
+  const [editType, setEditType] = useState<"text"|"highlight"|"rect"|"line"|"whiteout">("text");
   const [editPage, setEditPage] = useState(1);
   const [editText, setEditText] = useState("");
   const [formFields, setFormFields] = useState<{name:string;type:string}[]>([]);
@@ -204,7 +204,9 @@ export default function Home() {
             ? { type: "highlight" as const, page: editPage - 1, x: 48, y: 620, width: 240, height: 24 }
             : editType === "rect"
               ? { type: "rect" as const, page: editPage - 1, x: 48, y: 600, width: 240, height: 90 }
-              : { type: "line" as const, page: editPage - 1, x1: 48, y1: 590, x2: 288, y2: 590 };
+              : editType === "line"
+        ? { type: "line" as const, page: editPage - 1, x1: 48, y1: 590, x2: 288, y2: 590 }
+        : { type: "whiteout" as const, page: editPage - 1, x: 48, y: 600, width: 240, height: 90 };
         const bytes = await annotatePdf(files[0], [annotation]);
         downloadPdf(bytes, "pdfmate-edited.pdf");
         setStatus("Edited PDF created locally.");
@@ -300,7 +302,7 @@ export default function Home() {
 <div className="mt-3 space-y-3">{formFields.map(field=><label key={field.name} className="block text-sm text-zinc-400">{field.name}<input value={formValues[field.name]||""} onChange={e=>setFormValues(v=>({...v,[field.name]:e.target.value}))} className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white" placeholder={field.type}/></label>)}</div>
 </div>}{active.id === "edit" && <div className="mt-5 space-y-3">
 <label className="block text-sm text-zinc-400">Edit type</label>
-<select value={editType} onChange={e => setEditType(e.target.value as "text"|"highlight"|"rect"|"line")} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="text">Add text</option><option value="highlight">Highlight</option><option value="rect">Rectangle</option><option value="line">Line</option></select>
+<select value={editType} onChange={e => setEditType(e.target.value as "text"|"highlight"|"rect"|"line")} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="text">Add text</option><option value="highlight">Highlight</option><option value="rect">Rectangle</option><option value="line">Line</option><option value="whiteout">Whiteout</option></select>
 <div className="grid grid-cols-2 gap-3"><input value={editPage} onChange={e => setEditPage(Number(e.target.value)||1)} type="number" min="1" placeholder="Page" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>{editType === "text" && <input value={editText} onChange={e => setEditText(e.target.value)} placeholder="Text to add" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>}</div>
 <p className="text-xs text-zinc-600">The first version uses safe preset placement; interactive drag-to-place editing can be added on top of this engine.</p>
 </div>}{active.id === "resize" && <><label className="mt-5 block text-sm text-zinc-400">Target page size</label><select value={pageSize} onChange={e => setPageSize(e.target.value as "a4"|"letter"|"legal"|"a5")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option><option value="a5">A5</option></select><p className="mt-2 text-xs text-zinc-600">Pages are proportionally fitted and centered on the selected size.</p></>}{active.id === "pdfimages" && <><label className="mt-5 block text-sm text-zinc-400">Image format</label><select value={imageFormat} onChange={e => setImageFormat(e.target.value as "png"|"jpeg")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="png">PNG</option><option value="jpeg">JPG</option></select></>}
