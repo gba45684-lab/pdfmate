@@ -77,7 +77,7 @@ export default function Home() {
 
   function openTool(tool: Tool) {
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false);
+    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null);
     requestAnimationFrame(() => input.current?.click());
   }
 
