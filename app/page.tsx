@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  mergePdfs, reorderPages, resizePdf, rotatePages
+  annotatePdf, mergePdfs, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
@@ -29,6 +29,7 @@ const tools: Tool[] = [
   { id:"crop", name:"Crop PDF", description:"Trim equal margins from every page.", accept:".pdf,application/pdf", available:true, action:"crop" },
   { id:"flatten", name:"Flatten PDF", description:"Flatten interactive form fields into the document.", accept:".pdf,application/pdf", available:true, action:"flatten" },
   { id:"resize", name:"Resize PDF", description:"Fit every page to A4, Letter, Legal or A5.", accept:".pdf,application/pdf", available:true, action:"resize" },
+  { id:"edit", name:"Edit PDF", description:"Add text, highlights, boxes and lines to PDF pages.", accept:".pdf,application/pdf", available:true, action:"edit" },
   { id:"compress", name:"Compress PDF", description:"Server-side optimization pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
   { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
@@ -56,6 +57,9 @@ export default function Home() {
   const [angle, setAngle] = useState(90);
   const [imageFormat, setImageFormat] = useState<"png"|"jpeg">("png");
   const [pageSize, setPageSize] = useState<"a4"|"letter"|"legal"|"a5">("a4");
+  const [editType, setEditType] = useState<"text"|"highlight"|"rect"|"line">("text");
+  const [editPage, setEditPage] = useState(1);
+  const [editText, setEditText] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
@@ -77,7 +81,7 @@ export default function Home() {
 
   function openTool(tool: Tool) {
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null);
+    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text");
     requestAnimationFrame(() => input.current?.click());
   }
 
@@ -167,6 +171,21 @@ export default function Home() {
         setStatus("Flattened PDF created locally.");
         return;
       }
+      if (active.action === "edit") {
+        if (editPage < 1) throw new Error("Enter a valid page number.");
+        if (editType === "text" && !editText.trim()) throw new Error("Enter text to add.");
+        const annotation = editType === "text"
+          ? { type: "text" as const, page: editPage - 1, x: 48, y: 72, text: editText.trim(), size: 16 }
+          : editType === "highlight"
+            ? { type: "highlight" as const, page: editPage - 1, x: 48, y: 620, width: 240, height: 24 }
+            : editType === "rect"
+              ? { type: "rect" as const, page: editPage - 1, x: 48, y: 600, width: 240, height: 90 }
+              : { type: "line" as const, page: editPage - 1, x1: 48, y1: 590, x2: 288, y2: 590 };
+        const bytes = await annotatePdf(files[0], [annotation]);
+        downloadPdf(bytes, "pdfmate-edited.pdf");
+        setStatus("Edited PDF created locally.");
+        return;
+      }
       if (active.action === "resize") {
         const bytes = await resizePdf(files[0], pageSize);
         downloadPdf(bytes, "pdfmate-" + pageSize + ".pdf");
@@ -252,7 +271,12 @@ export default function Home() {
           {active.needsSpec && <><label className="mt-5 block text-sm text-zinc-400">{active.id === "sign" ? "Pages to sign (blank = every page)" : "Pages"}</label><input value={spec} onChange={e => setSpec(e.target.value)} placeholder="Example: 1,3-5,8" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "crop" && <><label className="mt-5 block text-sm text-zinc-400">Margin to remove (points)</label><input value={spec} onChange={e => setSpec(e.target.value)} inputMode="numeric" placeholder="24" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "rotate" && <><label className="mt-5 block text-sm text-zinc-400">Rotation</label><select value={angle} onChange={e => setAngle(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></>}
-          {active.id === "resize" && <><label className="mt-5 block text-sm text-zinc-400">Target page size</label><select value={pageSize} onChange={e => setPageSize(e.target.value as "a4"|"letter"|"legal"|"a5")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option><option value="a5">A5</option></select><p className="mt-2 text-xs text-zinc-600">Pages are proportionally fitted and centered on the selected size.</p></>}{active.id === "pdfimages" && <><label className="mt-5 block text-sm text-zinc-400">Image format</label><select value={imageFormat} onChange={e => setImageFormat(e.target.value as "png"|"jpeg")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="png">PNG</option><option value="jpeg">JPG</option></select></>}
+          {active.id === "edit" && <div className="mt-5 space-y-3">
+<label className="block text-sm text-zinc-400">Edit type</label>
+<select value={editType} onChange={e => setEditType(e.target.value as "text"|"highlight"|"rect"|"line")} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="text">Add text</option><option value="highlight">Highlight</option><option value="rect">Rectangle</option><option value="line">Line</option></select>
+<div className="grid grid-cols-2 gap-3"><input value={editPage} onChange={e => setEditPage(Number(e.target.value)||1)} type="number" min="1" placeholder="Page" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>{editType === "text" && <input value={editText} onChange={e => setEditText(e.target.value)} placeholder="Text to add" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>}</div>
+<p className="text-xs text-zinc-600">The first version uses safe preset placement; interactive drag-to-place editing can be added on top of this engine.</p>
+</div>}{active.id === "resize" && <><label className="mt-5 block text-sm text-zinc-400">Target page size</label><select value={pageSize} onChange={e => setPageSize(e.target.value as "a4"|"letter"|"legal"|"a5")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option><option value="a5">A5</option></select><p className="mt-2 text-xs text-zinc-600">Pages are proportionally fitted and centered on the selected size.</p></>}{active.id === "pdfimages" && <><label className="mt-5 block text-sm text-zinc-400">Image format</label><select value={imageFormat} onChange={e => setImageFormat(e.target.value as "png"|"jpeg")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="png">PNG</option><option value="jpeg">JPG</option></select></>}
           {active.id === "sign" && <div className="mt-5"><label className="block text-sm text-zinc-400">Draw your signature</label><canvas ref={canvas} width={900} height={260} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} className="mt-2 h-40 w-full touch-none rounded-xl border border-zinc-700 bg-white"/><button type="button" onClick={() => { const c=canvas.current,ctx=c?.getContext("2d"); if(c&&ctx){ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);setSignatureReady(false);} }} className="mt-2 text-sm text-zinc-500 hover:text-zinc-300">Clear signature</button></div>}
           {active.id === "ai" && <><label className="mt-5 block text-sm text-zinc-400">Ask your PDF</label><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Summarize this document, find the key dates, explain section 3…" className="mt-2 min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/>{aiAnswer && <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-300 whitespace-pre-wrap">{aiAnswer}</div>}</>}
           {active.needsText && <><label className="mt-5 block text-sm text-zinc-400">Watermark text</label><input value={text} onChange={e => setText(e.target.value)} placeholder="CONFIDENTIAL" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
