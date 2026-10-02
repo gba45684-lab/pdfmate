@@ -1,8 +1,8 @@
 # PDFMate
 
-Privacy-first browser PDF workspace built with Next.js, TypeScript, Tailwind CSS and pdf-lib.
+Privacy-first browser PDF workspace built with Next.js, TypeScript, Tailwind CSS, PDF.js and pdf-lib.
 
-## Local-first tools
+## Browser-local tools
 
 - Merge PDF
 - Split / extract pages
@@ -12,24 +12,34 @@ Privacy-first browser PDF workspace built with Next.js, TypeScript, Tailwind CSS
 - Watermark
 - Page numbers
 - JPG/PNG to PDF
+- PDF to PNG/JPG
+- Sign PDF with a drawn signature
 - AI PDF text Q&A
 
-Core document operations run in the browser. Files are not uploaded for those operations.
+The listed document operations process files in the browser. PDFMate does not upload those files for the local tools.
 
-## Server features
+## AI
 
-The AI route is /api/ai and keeps the OpenRouter key server-side.
+The AI route is `/api/ai` and keeps the OpenRouter API key server-side.
 
-Set OPENROUTER_API_KEY and NEXT_PUBLIC_APP_URL in the deployment environment.
+Set:
 
-Compression, password encryption, OCR and advanced PDF/image conversion are reserved for the secure server processing pipeline.
+- `OPENROUTER_API_KEY`
+- `OPENROUTER_MODEL` (optional; defaults to `openai/gpt-4o-mini`)
+- `NEXT_PUBLIC_APP_URL`
+
+PDF text is extracted in the browser before the selected text is sent to the AI endpoint. The proxy limits request size, message count and output tokens.
+
+## Reserved server pipeline
+
+Compression, password encryption, OCR, PDF/A, Office conversion and advanced repair/editing require a real server/worker pipeline. PDFMate does not fake these operations in the browser.
 
 ## Development
 
     npm install
     npm run dev
 
-Production check:
+Production checks:
 
     npm run lint
     npm run build
