@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import JSZip from "jszip";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
   annotatePdf, fillPdfForm, getPdfFormFields, mergePdfs, reorderPages, resizePdf, rotatePages
@@ -162,11 +163,13 @@ export default function Home() {
       }
       if (active.action === "pdfimages") {
         const images = await pdfToImages(files[0], imageFormat);
-        images.forEach((item) => downloadBlob(item.blob, item.name));
-        setStatus(images.length + " page image(s) created locally.");
+        const zip = new JSZip();
+        images.forEach(({ name, blob }) => zip.file(name, blob));
+        const archive = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
+        downloadBlob(archive, "pdfmate-images.zip");
+        setStatus(images.length + " image(s) packaged into a ZIP locally.");
         return;
-      }
-      if (active.action === "crop") {
+      }      if (active.action === "crop") {
         const bytes = await cropPages(files[0], Number(spec) || 24);
         downloadPdf(bytes, "pdfmate-cropped.pdf");
         setStatus("Cropped PDF created locally.");
