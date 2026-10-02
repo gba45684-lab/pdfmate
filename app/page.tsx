@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  annotatePdf, mergePdfs, reorderPages, resizePdf, rotatePages
+  annotatePdf, fillPdfForm, getPdfFormFields, mergePdfs, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
@@ -30,6 +30,7 @@ const tools: Tool[] = [
   { id:"flatten", name:"Flatten PDF", description:"Flatten interactive form fields into the document.", accept:".pdf,application/pdf", available:true, action:"flatten" },
   { id:"resize", name:"Resize PDF", description:"Fit every page to A4, Letter, Legal or A5.", accept:".pdf,application/pdf", available:true, action:"resize" },
   { id:"edit", name:"Edit PDF", description:"Add text, highlights, boxes and lines to PDF pages.", accept:".pdf,application/pdf", available:true, action:"edit" },
+  { id:"forms", name:"Fill PDF Forms", description:"Detect and fill standard AcroForm text fields locally.", accept:".pdf,application/pdf", available:true, action:"forms" },
   { id:"compress", name:"Compress PDF", description:"Server-side optimization pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
   { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
@@ -60,6 +61,8 @@ export default function Home() {
   const [editType, setEditType] = useState<"text"|"highlight"|"rect"|"line">("text");
   const [editPage, setEditPage] = useState(1);
   const [editText, setEditText] = useState("");
+  const [formFields, setFormFields] = useState<{name:string;type:string}[]>([]);
+  const [formValues, setFormValues] = useState<Record<string,string>>({});
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
@@ -81,7 +84,7 @@ export default function Home() {
 
   function openTool(tool: Tool) {
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text");
+    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setFormFields([]); setFormValues({});
     requestAnimationFrame(() => input.current?.click());
   }
 
@@ -169,6 +172,12 @@ export default function Home() {
         const bytes = await flattenPdf(files[0]);
         downloadPdf(bytes, "pdfmate-flattened.pdf");
         setStatus("Flattened PDF created locally.");
+        return;
+      }
+      if (active.action === "forms") {
+        const bytes = await fillPdfForm(files[0], formValues);
+        downloadPdf(bytes, "pdfmate-filled-form.pdf");
+        setStatus("Filled PDF form created locally.");
         return;
       }
       if (active.action === "edit") {
@@ -271,7 +280,10 @@ export default function Home() {
           {active.needsSpec && <><label className="mt-5 block text-sm text-zinc-400">{active.id === "sign" ? "Pages to sign (blank = every page)" : "Pages"}</label><input value={spec} onChange={e => setSpec(e.target.value)} placeholder="Example: 1,3-5,8" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "crop" && <><label className="mt-5 block text-sm text-zinc-400">Margin to remove (points)</label><input value={spec} onChange={e => setSpec(e.target.value)} inputMode="numeric" placeholder="24" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "rotate" && <><label className="mt-5 block text-sm text-zinc-400">Rotation</label><select value={angle} onChange={e => setAngle(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></>}
-          {active.id === "edit" && <div className="mt-5 space-y-3">
+          {active.id === "forms" && <div className="mt-5">
+<button type="button" onClick={async()=>{try{setStatus("Detecting form fields…");const fields=await getPdfFormFields(files[0]);setFormFields(fields);setFormValues(Object.fromEntries(fields.map(f=>[f.name,""])));setStatus(fields.length+" fillable field(s) detected.");}catch(e){setStatus(e instanceof Error?e.message:"Could not inspect PDF form.");}}} className="w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Detect form fields</button>
+<div className="mt-3 space-y-3">{formFields.map(field=><label key={field.name} className="block text-sm text-zinc-400">{field.name}<input value={formValues[field.name]||""} onChange={e=>setFormValues(v=>({...v,[field.name]:e.target.value}))} className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-white" placeholder={field.type}/></label>)}</div>
+</div>}{active.id === "edit" && <div className="mt-5 space-y-3">
 <label className="block text-sm text-zinc-400">Edit type</label>
 <select value={editType} onChange={e => setEditType(e.target.value as "text"|"highlight"|"rect"|"line")} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="text">Add text</option><option value="highlight">Highlight</option><option value="rect">Rectangle</option><option value="line">Line</option></select>
 <div className="grid grid-cols-2 gap-3"><input value={editPage} onChange={e => setEditPage(Number(e.target.value)||1)} type="number" min="1" placeholder="Page" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>{editType === "text" && <input value={editText} onChange={e => setEditText(e.target.value)} placeholder="Text to add" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>}</div>
