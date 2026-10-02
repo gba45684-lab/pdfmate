@@ -9,3 +9,5 @@ test("worker exposes isolated production operations",()=>{
   assert.match(source,/action==="compress"/);
   assert.match(source,/action==="office-to-pdf"/);
 });
+
+test("worker requires password only for protect",()=>{assert.match(source,/action==="protect" &&/);});
