@@ -1,0 +1,9 @@
+{
+  "name": "PDFMate",
+  "short_name": "PDFMate",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#8b5cf6",
+  "description": "Fast, privacy-first PDF workspace."
+}
