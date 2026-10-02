@@ -9,6 +9,7 @@ import {
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 import { ocrPdf, ocrPdfSearchable } from "../lib/pdf-ocr";
+import { createSupabaseBrowserClient } from "../lib/supabase";
 
 type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact"|"protect"|"office";
 type Tool = {
@@ -79,6 +80,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [ocrSearchable, setOcrSearchable] = useState(true);
   const [cloudDocs, setCloudDocs] = useState<{id:string;name:string;size_bytes:number;created_at:string}[]>([]);
   const [cloudLoading, setCloudLoading] = useState(false);
+  const [cloudSaving, setCloudSaving] = useState(false);
   const [protectPassword, setProtectPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
@@ -117,8 +119,32 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     try { const response=await fetch("/api/documents"); const data=await response.json(); if(response.ok) setCloudDocs(data.documents||[]); } finally { setCloudLoading(false); }
   }
   async function saveCloudDocument(file: File) {
-    const response=await fetch("/api/documents",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name,size_bytes:file.size})});
-    if(response.ok) await loadCloudDocs();
+    setCloudSaving(true);
+    try {
+      const uploadResponse = await fetch("/api/storage/upload-url",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name})});
+      const uploadData = await uploadResponse.json().catch(()=>null);
+      if(!uploadResponse.ok) throw new Error(uploadData?.error || "Sign in to enable cloud storage.");
+      const supabase=createSupabaseBrowserClient();
+      if(!supabase) throw new Error("Supabase is not configured.");
+      const upload=await supabase.storage.from(uploadData.bucket).uploadToSignedUrl(uploadData.path,uploadData.token,file);
+      if(upload.error) throw upload.error;
+      const response=await fetch("/api/documents",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:file.name,size_bytes:file.size,storage_path:uploadData.path})});
+      if(!response.ok){await supabase.storage.from(uploadData.bucket).remove([uploadData.path]); const data=await response.json().catch(()=>null); throw new Error(data?.error || "Could not save cloud metadata.");}
+      await loadCloudDocs();
+      setStatus("Saved to your private cloud storage.");
+    } finally { setCloudSaving(false); }
+  }
+  async function downloadCloudDocument(id:string) {
+    const response=await fetch("/api/storage/download-url",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({document_id:id})});
+    const data=await response.json().catch(()=>null);
+    if(!response.ok) throw new Error(data?.error || "Could not create download link.");
+    window.open(data.url,"_blank","noopener,noreferrer");
+  }
+  async function deleteCloudDocument(id:string) {
+    const response=await fetch("/api/documents/"+encodeURIComponent(id),{method:"DELETE"});
+    const data=await response.json().catch(()=>null);
+    if(!response.ok) throw new Error(data?.error || "Could not delete cloud document.");
+    await loadCloudDocs();
   }
 
   function openTool(tool: Tool) {
@@ -378,7 +404,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       <section id="workflow" className="border-y border-zinc-900 bg-zinc-950 px-6 py-20">
         <div className="mx-auto max-w-5xl"><h2 className="text-3xl font-semibold">One workspace, simple flow</h2><div className="mt-8 grid gap-4 md:grid-cols-3">{["Choose a tool","Process locally","Download result"].map((x,i)=><div key={x} className="rounded-2xl border border-zinc-800 p-6"><div className="text-sm text-violet-300">0{i+1}</div><h3 className="mt-4 font-semibold">{x}</h3><p className="mt-2 text-sm text-zinc-500">Focused controls with no unnecessary document uploads.</p></div>)}</div></div>
       </section>
-      <footer id="privacy" className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-600">PDFMate · Privacy-first PDF workspace</footer>
+      <section id="cloud" className="mx-auto max-w-7xl px-6 pb-20"><div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">Private cloud files</h2><p className="mt-1 text-sm text-zinc-500">Files are stored only after you sign in and choose Save to cloud.</p></div><button type="button" onClick={()=>loadCloudDocs()} className="rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-400">Refresh</button></div><div className="mt-5 space-y-2">{cloudDocs.map(doc=><div key={doc.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3"><div className="min-w-0"><div className="truncate text-sm">{doc.name}</div><div className="text-xs text-zinc-600">{Math.max(0,Math.round(doc.size_bytes/1024))} KB</div></div><div className="flex gap-2"><button type="button" onClick={()=>downloadCloudDocument(doc.id).catch(e=>setStatus(e instanceof Error?e.message:"Download failed."))} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-violet-300">Open</button><button type="button" onClick={()=>deleteCloudDocument(doc.id).catch(e=>setStatus(e instanceof Error?e.message:"Delete failed."))} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-red-300">Delete</button></div></div>)}{!cloudDocs.length&&!cloudLoading&&<div className="text-sm text-zinc-600">No cloud files yet. Sign in and save a document from any tool.</div>}{cloudLoading&&<div className="text-sm text-zinc-600">Loading cloud files…</div>}</div></div></section><footer id="privacy" className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-600">PDFMate · Privacy-first PDF workspace</footer>
 
       <input ref={input} hidden type="file" multiple accept={active?.accept} onChange={e => setFiles(Array.from(e.target.files || []))}/>
 
