@@ -64,6 +64,8 @@ export default function Home() {
   const [editType, setEditType] = useState<"text"|"highlight"|"rect"|"line"|"whiteout">("text");
   const [editPage, setEditPage] = useState(1);
   const [editText, setEditText] = useState("");
+  const [editX, setEditX] = useState(48);
+  const [editY, setEditY] = useState(72);
   const [formFields, setFormFields] = useState<{name:string;type:string}[]>([]);
   const [formValues, setFormValues] = useState<Record<string,string>>({});
   const [ocrText, setOcrText] = useState("");
@@ -94,7 +96,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   function openTool(tool: Tool) {
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng");
+    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng");
     requestAnimationFrame(() => input.current?.click());
   }
 
@@ -210,13 +212,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         if (editPage < 1) throw new Error("Enter a valid page number.");
         if (editType === "text" && !editText.trim()) throw new Error("Enter text to add.");
         const annotation = editType === "text"
-          ? { type: "text" as const, page: editPage - 1, x: 48, y: 72, text: editText.trim(), size: 16 }
+          ? { type: "text" as const, page: editPage - 1, x: editX, y: editY, text: editText.trim(), size: 16 }
           : editType === "highlight"
-            ? { type: "highlight" as const, page: editPage - 1, x: 48, y: 620, width: 240, height: 24 }
+            ? { type: "highlight" as const, page: editPage - 1, x: editX, y: editY, width: 240, height: 24 }
             : editType === "rect"
-              ? { type: "rect" as const, page: editPage - 1, x: 48, y: 600, width: 240, height: 90 }
+              ? { type: "rect" as const, page: editPage - 1, x: editX, y: editY, width: 240, height: 90 }
               : editType === "line"
-        ? { type: "line" as const, page: editPage - 1, x1: 48, y1: 590, x2: 288, y2: 590 }
+        ? { type: "line" as const, page: editPage - 1, x1: editX, y1: editY, x2: editX + 240, y2: editY }
         : { type: "whiteout" as const, page: editPage - 1, x: 48, y: 600, width: 240, height: 90 };
         const bytes = await annotatePdf(files[0], [annotation]);
         downloadPdf(bytes, "pdfmate-edited.pdf");
@@ -315,7 +317,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 <label className="block text-sm text-zinc-400">Edit type</label>
 <select value={editType} onChange={e => setEditType(e.target.value as "text"|"highlight"|"rect"|"line"|"whiteout")} className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="text">Add text</option><option value="highlight">Highlight</option><option value="rect">Rectangle</option><option value="line">Line</option><option value="whiteout">Whiteout</option></select>
 <div className="grid grid-cols-2 gap-3"><input value={editPage} onChange={e => setEditPage(Number(e.target.value)||1)} type="number" min="1" placeholder="Page" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>{editType === "text" && <input value={editText} onChange={e => setEditText(e.target.value)} placeholder="Text to add" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/>}</div>
-<p className="text-xs text-zinc-600">The first version uses safe preset placement; interactive drag-to-place editing can be added on top of this engine.</p>
+<div className="grid grid-cols-2 gap-3"><input type="number" value={editX} onChange={e=>setEditX(Number(e.target.value)||0)} placeholder="X" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={editY} onChange={e=>setEditY(Number(e.target.value)||0)} placeholder="Y" className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/></div><button type="button" onClick={async()=>{try{setStatus("Rendering editor preview…");const pages=await renderPdfPreviews(files[0],60);setPreviews(pages);setStatus("Click the page preview to place the annotation.");}catch(e){setStatus(e instanceof Error?e.message:"Could not render editor preview.");}}} className="w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Load visual editor</button>{previews.filter(p=>p.index===editPage).map(p=><button type="button" key={p.index} onClick={e=>{const r=(e.currentTarget as HTMLElement).getBoundingClientRect();const scale=.55;setEditX(Math.round((e.clientX-r.left)/scale));setEditY(Math.round((r.height-(e.clientY-r.top))/scale));}} className="block w-full overflow-hidden rounded-lg border border-zinc-700 hover:border-violet-400"><img src={p.url} alt={"Page "+p.index+" preview"} className="w-full"/></button>)}<p className="text-xs text-zinc-600">Click the preview to place the selected edit tool. Coordinates are stored in PDF points.</p>
 </div>}{active.id === "resize" && <><label className="mt-5 block text-sm text-zinc-400">Target page size</label><select value={pageSize} onChange={e => setPageSize(e.target.value as "a4"|"letter"|"legal"|"a5")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="a4">A4</option><option value="letter">Letter</option><option value="legal">Legal</option><option value="a5">A5</option></select><p className="mt-2 text-xs text-zinc-600">Pages are proportionally fitted and centered on the selected size.</p></>}{active.id === "pdfimages" && <><label className="mt-5 block text-sm text-zinc-400">Image format</label><select value={imageFormat} onChange={e => setImageFormat(e.target.value as "png"|"jpeg")} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="png">PNG</option><option value="jpeg">JPG</option></select></>}
           {active.id === "sign" && <div className="mt-5"><label className="block text-sm text-zinc-400">Draw your signature</label><canvas ref={canvas} width={900} height={260} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} className="mt-2 h-40 w-full touch-none rounded-xl border border-zinc-700 bg-white"/><button type="button" onClick={() => { const c=canvas.current,ctx=c?.getContext("2d"); if(c&&ctx){ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);setSignatureReady(false);} }} className="mt-2 text-sm text-zinc-500 hover:text-zinc-300">Clear signature</button></div>}
           {active.id === "ai" && <><label className="mt-5 block text-sm text-zinc-400">Ask your PDF</label><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Summarize this document, find the key dates, explain section 3…" className="mt-2 min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/>{aiAnswer && <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-300 whitespace-pre-wrap">{aiAnswer}</div>}</>}
