@@ -79,6 +79,10 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [dragPage, setDragPage] = useState<number | null>(null);
 
   useEffect(() => {
+    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+  }, []);
+
+  useEffect(() => {
     if (!active || active.id !== "sign" || !canvas.current) return;
     const c = canvas.current, ctx = c.getContext("2d");
     if (!ctx) return;
