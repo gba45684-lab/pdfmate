@@ -299,3 +299,18 @@ export async function inspectPdf(file: File) {
     averageHeight: sizes.length ? Math.round(sizes.reduce((sum, s) => sum + s.height, 0) / sizes.length) : 0,
   };
 }
+
+
+export async function redactPages(file: File, redactions: Array<{page:number;x:number;y:number;width:number;height:number}>) {
+  const src = await loadPdf(file);
+  for (const item of redactions) {
+    const page = src.getPage(item.page);
+    if (!page) continue;
+    page.drawRectangle({
+      x: Math.max(0, item.x), y: Math.max(0, item.y),
+      width: Math.max(1, item.width), height: Math.max(1, item.height),
+      color: rgb(0, 0, 0), borderWidth: 0,
+    });
+  }
+  return src.save();
+}
