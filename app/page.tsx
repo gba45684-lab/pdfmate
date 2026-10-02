@@ -152,10 +152,17 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     } finally { setCloudSaving(false); }
   }
   async function downloadCloudDocument(id:string) {
-    const response=await fetch("/api/storage/download-url",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({document_id:id})});
-    const data=await response.json().catch(()=>null);
-    if(!response.ok) throw new Error(data?.error || "Could not create download link.");
-    window.open(data.url,"_blank","noopener,noreferrer");
+    const popup=window.open("about:blank","_blank");
+    try {
+      const response=await fetch("/api/storage/download-url",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({document_id:id})});
+      const data=await response.json().catch(()=>null);
+      if(!response.ok) throw new Error(data?.error || "Could not create download link.");
+      if(popup) popup.location.href=data.url;
+      else window.location.href=data.url;
+    } catch(error) {
+      if(popup) popup.close();
+      throw error;
+    }
   }
   async function deleteCloudDocument(id:string) {
     const response=await fetch("/api/documents/"+encodeURIComponent(id),{method:"DELETE"});
