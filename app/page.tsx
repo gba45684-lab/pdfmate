@@ -100,6 +100,8 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [previews, setPreviews] = useState<PdfPagePreview[]>([]);
   const [order, setOrder] = useState<number[]>([]);
   const [dragPage, setDragPage] = useState<number | null>(null);
+  const [result, setResult] = useState<{name:string; blob:Blob; preview:boolean} | null>(null);
+  const [resultUrl, setResultUrl] = useState("");
   const visibleTools = tools.filter((tool) => {
     const category = tool.id === "ai" || tool.id === "auto" || tool.id === "ocr" || tool.id === "compress" || tool.id === "protect" ? "Smart" :
       ["merge","split","extract","delete","rotate","reorder","crop","resize"].includes(tool.id) ? "Organize" :
@@ -175,9 +177,21 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   function openTool(tool: Tool) {
     setRecentTools(prev => { const next=[tool.name,...prev.filter(x=>x!==tool.name)].slice(0,6); try { localStorage.setItem("pdfmate-recent-tools", JSON.stringify(next)); } catch {} return next; });
-    setActive(tool); setFiles([]); setPreviews([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setEditW(180); setEditH(40); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng"); setOcrSearchable(true);
-    requestAnimationFrame(() => input.current?.click());
+    setActive(tool); setFiles([]); setPreviews([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer(""); setResult(null); setResultUrl(""); setBusy(false);
+    setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setEditW(180); setEditH(40); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng"); setOcrSearchable(true); setProtectPassword("");
+    requestAnimationFrame(() => { if (input.current) { input.current.value = ""; input.current.click(); } });
+  }
+
+  function closeTool() { setActive(null); setFiles([]); setPreviews([]); setResult(null); setResultUrl(""); setStatus(""); setBusy(false); }
+  function deliverBlob(blob: Blob, name: string) { const url=URL.createObjectURL(blob); setResultUrl(url); setResult({name,blob,preview:blob.type==="application/pdf"||name.toLowerCase().endsWith(".pdf")}); setStatus("Result ready — review it, then download when you are ready."); }
+  function deliverPdf(bytes: Uint8Array, name: string) { deliverBlob(new Blob([bytes as BlobPart], {type:"application/pdf"}), name); }
+  function handleFiles(event: React.ChangeEvent<HTMLInputElement>) {
+    const selected=Array.from(event.target.files||[]); if(!active||!selected.length)return;
+    const isImageTool=active.id==="images", isOfficeTool=active.id==="office";
+    const valid=selected.filter(file=>{const lower=file.name.toLowerCase(); if(isImageTool)return file.type==="image/png"||file.type==="image/jpeg"||/\\.(png|jpe?g)$/.test(lower); if(isOfficeTool)return /\\.(doc|docx|xls|xlsx|ppt|pptx)$/.test(lower); return file.type==="application/pdf"||lower.endsWith(".pdf");});
+    const multiple=active.id==="merge"||active.id==="images", picked=multiple?valid:valid.slice(0,1);
+    if(!picked.length){setFiles([]);setStatus(isImageTool?"Select JPG or PNG images.":isOfficeTool?"Select a DOC, DOCX, XLS, XLSX, PPT or PPTX file.":"Select a PDF file.");event.target.value="";return;}
+    setFiles(picked);setResult(null);setResultUrl("");setPreviews([]);setOrder([]);setStatus(multiple&&valid.length!==selected.length?"Unsupported files were skipped.":picked.length+" file"+(picked.length===1?"":"s")+" ready.");
   }
 
   async function loadOrganizer(file: File) {
@@ -230,13 +244,14 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   function stopDraw() { drawing.current = false; }
 
   async function run() {
-    if (!active || !active.available || !files.length) return;
+    if (!active || !active.available || !files.length) { setStatus("Choose a supported file first."); return; }
+    if (active.id === "merge" && files.length < 2) { setStatus("Merge needs at least 2 PDF files."); return; }
     setBusy(true); setStatus(active.id === "ai" ? "Reading PDF text locally…" : "Processing locally…");
     try {
       if (active.action === "redact") {
         if (editPage < 1) throw new Error("Enter a valid page number.");
         const bytes = await secureRedactPdf(files[0], [{page: editPage - 1, x: editX, y: editY, width: redactWidth, height: redactHeight}]);
-        downloadPdf(bytes, "pdfmate-redacted.pdf");
+        deliverPdf(bytes, "pdfmate-redacted.pdf");
         setStatus("Redacted PDF created locally. Verify the exported file before sharing.");
         return;
       }
@@ -244,13 +259,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         const form=new FormData(); form.append("file",files[0]); form.append("action","office-to-pdf");
         const response=await fetch("/api/pdf/worker",{method:"POST",body:form});
         if(!response.ok){const data=await response.json().catch(()=>null);throw new Error(data?.error||"Office conversion failed.");}
-        downloadBlob(await response.blob(),"pdfmate-converted.pdf"); setStatus("Converted PDF downloaded."); return;
+        deliverBlob(await response.blob(), "pdfmate-converted.pdf"); setStatus("Converted PDF downloaded."); return;
       }
       if (active.action === "compress") {
         const form=new FormData(); form.append("file",files[0]); form.append("action","compress");
         const response=await fetch("/api/pdf/worker",{method:"POST",body:form});
         if(!response.ok){const data=await response.json().catch(()=>null);throw new Error(data?.error||"Secure optimization failed.");}
-        downloadBlob(await response.blob(),"pdfmate-optimized.pdf"); setStatus("Optimized PDF downloaded."); return;
+        deliverBlob(await response.blob(), "pdfmate-optimized.pdf"); setStatus("Optimized PDF downloaded."); return;
       }
       if (active.action === "protect") {
         if (!protectPassword || protectPassword.length < 8) throw new Error("Use a password of at least 8 characters.");
@@ -298,25 +313,25 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         const zip = new JSZip();
         images.forEach(({ name, blob }) => zip.file(name, blob));
         const archive = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
-        downloadBlob(archive, "pdfmate-images.zip");
+        deliverBlob(archive, "pdfmate-images.zip");
         setStatus(images.length + " image(s) packaged into a ZIP locally.");
         return;
       }      if (active.action === "crop") {
         const bytes = await cropPages(files[0], Number(spec) || 24);
-        downloadPdf(bytes, "pdfmate-cropped.pdf");
+        deliverPdf(bytes, "pdfmate-cropped.pdf");
         setStatus("Cropped PDF created locally.");
         return;
       }
       if (active.action === "flatten") {
         const bytes = await flattenPdf(files[0]);
-        downloadPdf(bytes, "pdfmate-flattened.pdf");
+        deliverPdf(bytes, "pdfmate-flattened.pdf");
         setStatus("Flattened PDF created locally.");
         return;
       }
       if (active.action === "ocr") {
         setOcrText(""); setOcrProgress(0);
         const bytes = ocrSearchable ? await ocrPdfSearchable(files[0], 20, setOcrProgress, ocrLanguage) : null;
-        if (bytes) { downloadPdf(bytes, "pdfmate-searchable-ocr.pdf"); setStatus("Searchable OCR PDF created locally."); return; }
+        if (bytes) { deliverPdf(bytes, "pdfmate-searchable-ocr.pdf"); setStatus("Searchable OCR PDF created locally."); return; }
         const pages = await ocrPdf(files[0], 20, setOcrProgress, ocrLanguage);
         const text = pages.map(page => "--- Page " + page.page + " ---\\n" + page.text).join("\\n\\n");
         setOcrText(text);
@@ -325,7 +340,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       }
       if (active.action === "forms") {
         const bytes = await fillPdfForm(files[0], formValues);
-        downloadPdf(bytes, "pdfmate-filled-form.pdf");
+        deliverPdf(bytes, "pdfmate-filled-form.pdf");
         setStatus("Filled PDF form created locally.");
         return;
       }
@@ -335,20 +350,20 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         const annotation = editType === "text"
           ? { type: "text" as const, page: editPage - 1, x: editX, y: editY, text: editText.trim(), size: 16 }
           : editType === "highlight"
-            ? { type: "highlight" as const, page: editPage - 1, x: editX, y: editY, width: 240, height: 24 }
+            ? { type: "highlight" as const, page: editPage - 1, x: editX, y: editY, width: editW, height: editH }
             : editType === "rect"
-              ? { type: "rect" as const, page: editPage - 1, x: editX, y: editY, width: 240, height: 90 }
+              ? { type: "rect" as const, page: editPage - 1, x: editX, y: editY, width: editW, height: editH }
               : editType === "line"
-        ? { type: "line" as const, page: editPage - 1, x1: editX, y1: editY, x2: editX + 240, y2: editY }
-        : { type: "whiteout" as const, page: editPage - 1, x: 48, y: 600, width: 240, height: 90 };
+        ? { type: "line" as const, page: editPage - 1, x1: editX, y1: editY, x2: editX + editW, y2: editY }
+        : { type: "whiteout" as const, page: editPage - 1, x: editX, y: editY, width: editW, height: editH };
         const bytes = await annotatePdf(files[0], [annotation]);
-        downloadPdf(bytes, "pdfmate-edited.pdf");
+        deliverPdf(bytes, "pdfmate-edited.pdf");
         setStatus("Edited PDF created locally.");
         return;
       }
       if (active.action === "resize") {
         const bytes = await resizePdf(files[0], pageSize);
-        downloadPdf(bytes, "pdfmate-" + pageSize + ".pdf");
+        deliverPdf(bytes, "pdfmate-" + pageSize + ".pdf");
         setStatus("Resized PDF created locally.");
         return;
       }
@@ -356,7 +371,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         if (!signatureReady || !canvas.current) throw new Error("Draw your signature first.");
         const signature = canvas.current.toDataURL("image/png");
         const bytes = await addSignature(files[0], signature, spec);
-        downloadPdf(bytes, "pdfmate-signed.pdf");
+        deliverPdf(bytes, "pdfmate-signed.pdf");
         setStatus("Signed PDF created locally.");
         return;
       }
@@ -375,7 +390,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         case "resize": bytes = await resizePdf(files[0], pageSize); name = "pdfmate-" + pageSize + ".pdf"; break;
         default: throw new Error("This tool is not available yet.");
       }
-      downloadPdf(bytes, name);
+      deliverPdf(bytes, name);
       setStatus("Done — the PDF was created locally in your browser.");
     } catch (error) {
       console.error(error);
@@ -482,10 +497,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
           <footer id="privacy" className="border-t border-slate-200 bg-white px-4 py-7 pb-28 text-center text-xs text-slate-400 md:px-8 md:pb-7">PDFMate · Privacy-first PDF workspace · Browser-first processing</footer>
         </div>
       </div>
-      {active && <div className="fixed inset-0 z-50 grid place-items-end overflow-y-auto bg-black/80 p-0 sm:place-items-center sm:p-4" role="dialog" aria-modal="true">
+      {active && <div className="fixed inset-0 z-50 grid place-items-end overflow-y-auto bg-black/80 p-0 sm:place-items-center sm:p-4" role="dialog" aria-modal="true" onMouseDown={(e) => { if (e.target === e.currentTarget) closeTool(); }}>
+        <input ref={input} type="file" className="sr-only" tabIndex={-1} aria-hidden="true" accept={active.id === "images" ? "image/png,image/jpeg" : active.id === "office" ? ".doc,.docx,.xls,.xlsx,.ppt,.pptx" : ".pdf,application/pdf"} multiple={active.id === "merge" || active.id === "images"} onChange={handleFiles}/>
         <div className="w-full max-w-xl rounded-t-3xl border border-zinc-800 bg-zinc-950 p-4 pb-6 shadow-2xl sm:my-6 sm:rounded-3xl sm:p-6">
-          <div className="flex items-start justify-between"><div><h2 className="text-xl font-semibold">{active.name}</h2><p className="mt-1 text-sm text-zinc-500">{active.description}</p></div><button onClick={() => setActive(null)} className="rounded-lg px-2 py-1 text-zinc-400">✕</button></div>
-          <button onClick={() => input.current?.click()} className="mt-6 w-full rounded-2xl border border-dashed border-zinc-700 px-5 py-9 text-sm hover:border-violet-400">{files.length ? String(files.length) + " file(s) selected — choose again" : "Choose files"}</button>
+          <div className="flex items-start justify-between gap-3"><div><h2 className="text-xl font-semibold">{active.name}</h2><p className="mt-1 text-sm text-zinc-500">{active.description}</p></div><button type="button" onClick={closeTool} aria-label="Close PDF tool" className="rounded-lg px-2 py-1 text-zinc-400 hover:bg-zinc-900">✕</button></div>
+          {result ? <div className="mt-5 space-y-4"><div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5"><div className="text-xs font-bold uppercase tracking-wider text-emerald-300">Result ready</div><h3 className="mt-2 text-lg font-semibold">{result.name}</h3><p className="mt-1 text-sm text-zinc-400">Your file was created successfully. Preview it below when supported, or download it to continue.</p></div>{result.preview&&<iframe title="PDF result preview" src={resultUrl} className="h-[55vh] min-h-72 w-full rounded-xl border border-zinc-800 bg-white"/>}<div className="grid grid-cols-1 gap-2 sm:grid-cols-3"><button type="button" onClick={()=>{const a=document.createElement("a");a.href=resultUrl;a.download=result.name;a.click();}} className="rounded-xl bg-violet-500 px-4 py-3 font-semibold">Download result</button><button type="button" onClick={()=>{if(resultUrl)URL.revokeObjectURL(resultUrl);setResult(null);setResultUrl("");}} className="rounded-xl border border-zinc-700 px-4 py-3 text-sm">Back to edit</button><button type="button" onClick={()=>{if(resultUrl)URL.revokeObjectURL(resultUrl);setResult(null);setResultUrl("");setFiles([]);setStatus("");requestAnimationFrame(()=>{if(input.current){input.current.value="";input.current.click();}});}} className="rounded-xl border border-violet-500/30 px-4 py-3 text-sm text-violet-300">Process another</button></div><p className="text-center text-xs text-zinc-600">Nothing is downloaded until you tap Download result.</p></div> : null}
+          {!result && <>
+          <button onClick={() => {if(input.current){input.current.value="";input.current.click();}}} className="mt-6 w-full rounded-2xl border border-dashed border-zinc-700 px-5 py-9 text-sm hover:border-violet-400">{files.length ? String(files.length) + " file(s) selected — choose again" : "Choose files"}</button>
           {files.length > 0 && <div className="mt-3 max-h-24 overflow-auto rounded-xl bg-zinc-900 p-3 text-sm text-zinc-400">{files.map(f => <div key={f.name + f.size} className="truncate">{f.name}</div>)}</div>}
            {files.length > 0 && <button type="button" disabled={cloudSaving} onClick={() => saveCloudDocument(files[0]).catch(e => setStatus(e instanceof Error ? e.message : "Cloud save failed."))} className="mt-3 w-full rounded-xl border border-violet-500/30 px-4 py-3 text-sm text-violet-300 disabled:opacity-50">{cloudSaving ? "Saving to cloud…" : "Save original to private cloud"}</button>}
           {active.id === "reorder" && files[0] && <button onClick={() => loadOrganizer(files[0])} className="mt-4 w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Preview & arrange pages</button>}
@@ -544,11 +562,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
           {active.id === "sign" && <div className="mt-5"><label className="block text-sm text-zinc-400">Draw your signature</label><canvas ref={canvas} width={900} height={260} onPointerDown={startDraw} onPointerMove={moveDraw} onPointerUp={stopDraw} onPointerCancel={stopDraw} className="mt-2 h-40 w-full touch-none rounded-xl border border-zinc-700 bg-white"/><button type="button" onClick={() => { const c=canvas.current,ctx=c?.getContext("2d"); if(c&&ctx){ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);setSignatureReady(false);} }} className="mt-2 text-sm text-zinc-500 hover:text-zinc-300">Clear signature</button></div>}
           {active.id === "ai" && <><label className="mt-5 block text-sm text-zinc-400">Ask your PDF</label><textarea value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} placeholder="Summarize this document, find the key dates, explain section 3…" className="mt-2 min-h-28 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/>{active.id === "ai" && <div className="mt-3 flex flex-wrap gap-2">{["Summarize the document in 5 bullet points.","Extract all important dates, deadlines and amounts.","List the key sections and explain each briefly."].map(q=><button key={q} type="button" onClick={()=>setAiPrompt(q)} className="rounded-full border border-zinc-800 px-3 py-2 text-xs text-zinc-400 hover:border-violet-500 hover:text-violet-300">{q.split(".")[0]}</button>)}</div>}{aiAnswer && <div className="mt-4 max-h-64 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900 p-4 text-sm leading-6 text-zinc-300 whitespace-pre-wrap">{aiAnswer}</div>}</>}
           {active.needsText && <><label className="mt-5 block text-sm text-zinc-400">Watermark text</label><input value={text} onChange={e => setText(e.target.value)} placeholder="CONFIDENTIAL" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
-          <button disabled={!files.length || busy} onClick={run} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold disabled:opacity-40">{busy ? "Processing…" : active.id === "ai" ? "Ask PDF" : "Process & download"}</button>
-          {status && <p className="mt-4 text-center text-sm text-zinc-400">{status}</p>}
-          <p className="mt-5 text-center text-xs text-zinc-600">Browser-supported operations run locally. Password encryption and advanced optimization/conversion use the secure server worker.</p>
+          <button disabled={!files.length || busy} onClick={run} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold disabled:opacity-40">{busy ? "Processing…" : active.id === "ai" ? "Ask PDF" : "Create result"}</button>
+          {status && <p className="mt-4 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 text-center text-sm text-zinc-400">{status}</p>}
+          <div className="mt-5 flex items-center justify-between border-t border-zinc-900 pt-4"><button type="button" onClick={closeTool} className="rounded-xl border border-zinc-800 px-4 py-2.5 text-sm text-zinc-400 hover:text-white">← Back to tools</button><span className="text-xs text-zinc-600">Step: choose → configure → result</span></div>
+          <p className="mt-3 text-center text-xs text-zinc-600">Browser-supported operations run locally. Password encryption and advanced optimization/conversion use the secure server worker.</p>
+          </>}
         </div>
-      </div>}
+      </div>
     </main>
   );
 }
