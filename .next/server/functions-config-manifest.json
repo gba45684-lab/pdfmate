@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/ai": {},
+    "/api/pdf/protect": {},
+    "/api/pdf/worker": {}
+  }
+}
