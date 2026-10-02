@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, redactPages, reorderPages, resizePdf, rotatePages
+  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, redactPages, secureRedactPdf, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
@@ -17,7 +17,7 @@ type Tool = {
 };
 
 const tools: Tool[] = [
-  { id:"redact", name:"Redact PDF", description:"Place permanent black redaction blocks over sensitive page areas.", accept:".pdf,application/pdf", available:true, action:"redact" },
+  { id:"redact", name:"Redact PDF", description:"Rasterize pages with redactions burned into the page image so the covered source text is not retained as selectable PDF text.", accept:".pdf,application/pdf", available:true, action:"redact" },
   { id:"auto", name:"Auto PDF Mode", description:"Inspect your PDF and choose the most useful next action automatically.", accept:".pdf,application/pdf", available:true, action:"auto" },
   { id:"merge", name:"Merge PDF", description:"Combine multiple PDFs in the order you choose.", accept:".pdf,application/pdf", available:true, action:"merge" },
   { id:"split", name:"Split PDF", description:"Extract any page range into a new PDF.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"extract" },
@@ -182,7 +182,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     try {
       if (active.action === "redact") {
         if (editPage < 1) throw new Error("Enter a valid page number.");
-        const bytes = await redactPages(files[0], [{page: editPage - 1, x: editX, y: editY, width: redactWidth, height: redactHeight}]);
+        const bytes = await secureRedactPdf(files[0], [{page: editPage - 1, x: editX, y: editY, width: redactWidth, height: redactHeight}]);
         downloadPdf(bytes, "pdfmate-redacted.pdf");
         setStatus("Redacted PDF created locally.");
         return;
