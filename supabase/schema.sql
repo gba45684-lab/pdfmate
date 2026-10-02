@@ -4,3 +4,6 @@ create policy "documents_owner_select" on public.documents for select using (aut
 create policy "documents_owner_insert" on public.documents for insert with check (auth.uid()=user_id);
 create policy "documents_owner_update" on public.documents for update using (auth.uid()=user_id);
 create policy "documents_owner_delete" on public.documents for delete using (auth.uid()=user_id);
+
+-- Storage: create a private bucket named "documents" in Supabase Storage, then apply owner policies:
+create policy "document_objects_owner" on storage.objects for all using (bucket_id='documents' and auth.uid()::text=(storage.foldername(name))[1]) with check (bucket_id='documents' and auth.uid()::text=(storage.foldername(name))[1]);
