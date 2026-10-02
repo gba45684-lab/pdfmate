@@ -3,10 +3,6 @@ name: PDFMate Android APK
 on:
   push:
     branches: [main]
-    paths:
-      - "android/**"
-      - ".github/workflows/android-apk.yml"
-      - "package.json"
   workflow_dispatch:
 
 permissions:
