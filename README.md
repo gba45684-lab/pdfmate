@@ -17,7 +17,7 @@ Privacy-first browser PDF workspace built with Next.js, TypeScript, Tailwind CSS
 - Resize PDF
 - Edit PDF with text, highlights, boxes, lines and whiteout
 - Fill PDF forms, including text fields and common checkbox/select controls
-- OCR scanned PDF pages locally (English or English + Hindi)
+- OCR scanned PDF pages locally (English or English + Hindi) (English or English + Hindi)
 
 PDF-to-image exports are packaged into a ZIP for a single download.
 - AI PDF text Q&A
@@ -49,3 +49,13 @@ Production checks:
 
     npm run lint
     npm run build
+
+
+## Modern workspace additions
+
+- Offline-ready PWA shell with a web manifest and service worker.
+- Local PDF optimization using object streams and metadata cleanup when beneficial.
+- Visual click-to-place PDF annotations.
+- ZIP packaging for PDF-to-image exports.
+
+These patterns were informed by public open-source PDF projects including ClawPDF, PDF Tools Suite, Paperless PDF and browser PDF editors; PDFMate implements the useful ideas independently rather than copying project code.
