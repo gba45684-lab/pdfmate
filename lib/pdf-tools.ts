@@ -316,3 +316,26 @@ export async function redactPages(file: File, redactions: Array<{page:number;x:n
   }
   return src.save();
 }
+
+export async function secureRedactPdf(file: File, redactions: Array<{page:number;x:number;y:number;width:number;height:number}>) {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const source = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjs.getDocument({ data: source, disableWorker: true }).promise;
+  const out = await PDFDocument.create();
+  const byPage = new Map<number, Array<{x:number;y:number;width:number;height:number}>>();
+  for (const item of redactions) { const list=byPage.get(item.page)||[]; list.push(item); byPage.set(item.page,list); }
+  for (let i=1;i<=pdf.numPages;i++) {
+    const sourcePage=await pdf.getPage(i); const viewport=sourcePage.getViewport({scale:1.5});
+    const canvas=document.createElement("canvas"); canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
+    const context=canvas.getContext("2d"); if(!context) throw new Error("Could not create redaction canvas.");
+    await sourcePage.render({canvasContext:context,viewport}).promise;
+    for(const item of byPage.get(i-1)||[]) {
+      context.fillStyle="#000000";
+      context.fillRect(item.x*1.5, canvas.height-(item.y+item.height)*1.5, item.width*1.5, item.height*1.5);
+    }
+    const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Could not encode redacted page.")),"image/png"));
+    const image=await out.embedPng(await blob.arrayBuffer()); const page=out.addPage([sourcePage.getViewport({scale:1}).width,sourcePage.getViewport({scale:1}).height]);
+    page.drawImage(image,{x:0,y:0,width:page.getWidth(),height:page.getHeight()});
+  }
+  return out.save();
+}
