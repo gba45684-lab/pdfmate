@@ -129,6 +129,34 @@ export async function getPdfPageCount(file: File) {
   return src.getPageCount();
 }
 
-export async function rotateAllPages(file: File, angle: number) {
+export async function addSignature(file: File, signatureDataUrl: string, pageSpec = "") {
+  const src = await loadPdf(file);
+  const targets = parsePages(pageSpec || "1-" + src.getPageCount(), src.getPageCount());
+  if (!targets.length) throw new Error("Select at least one page for the signature.");
+
+  const base64 = signatureDataUrl.split(",")[1];
+  if (!base64) throw new Error("Invalid signature image.");
+  const signatureBytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+  const image = await src.embedPng(signatureBytes);
+
+  targets.forEach((index) => {
+    const page = src.getPage(index);
+    const { width, height } = page.getSize();
+    const maxWidth = Math.min(180, width * 0.32);
+    const ratio = image.height / image.width;
+    const drawWidth = maxWidth;
+    const drawHeight = drawWidth * ratio;
+    page.drawImage(image, {
+      x: Math.max(24, width - drawWidth - 36),
+      y: 36,
+      width: drawWidth,
+      height: drawHeight,
+      opacity: 0.92,
+    });
+  });
+
+  return src.save();
+}
+\nexport async function rotateAllPages(file: File, angle: number) {
   return rotatePages(file, "", angle);
 }
