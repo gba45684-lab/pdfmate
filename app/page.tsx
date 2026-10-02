@@ -358,51 +358,96 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   }
 
   return (
-    <main className="min-h-screen bg-[#09090b]">
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-        <div className="text-xl font-bold">PDF<span className="text-violet-400">Mate</span></div>
-        <nav className="hidden gap-7 text-sm text-zinc-400 md:flex"><a href="#tools">Tools</a><a href="#workspace">Workspace</a><a href="#workflow">How it works</a><a href="#privacy">Privacy</a></nav>
-        <a href="/auth" className="rounded-xl border border-zinc-700 px-4 py-2 text-sm">Sign in</a>
-      </header>
-
-      <section className="mx-auto max-w-5xl px-6 pb-20 pt-16 text-center">
-        <div className="mb-5 inline-flex rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-xs text-violet-300">FAST · PRIVATE · PDF-FIRST</div>
-        <h1 className="text-5xl font-bold tracking-tight md:text-7xl">Your PDFs.<br/><span className="text-violet-400">Simplified.</span></h1>
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-zinc-400">A browser-first PDF workspace for merging, splitting, signing and transforming documents.</p>
-        <button onClick={() => openTool(tools[0])} className="mx-auto mt-10 block w-full max-w-2xl rounded-3xl border border-dashed border-zinc-700 bg-zinc-950 px-6 py-14 shadow-2xl transition hover:border-violet-400 hover:bg-violet-500/5">
-          <div className="text-lg font-semibold">Drop PDFs here or choose files</div>
-          <div className="mt-2 text-sm text-zinc-500">Local-first processing — files are not uploaded for these tools.</div>
-        </button>
-      </section>
-
-      <section id="workspace" className="mx-auto max-w-7xl px-6 pb-16">
-        <div className="rounded-3xl border border-zinc-800 bg-zinc-950/80 p-6">
-          <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-violet-300">Workspace</p><h2 className="mt-2 text-2xl font-semibold">Quick access</h2></div><a href="/auth" className="text-sm text-violet-300">Account & cloud history →</a></div>
-          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/40 p-5"><div className="flex items-center justify-between"><div><div className="text-sm font-semibold">Cloud history</div><div className="text-xs text-zinc-600">Available after Supabase sign-in</div></div><button onClick={loadCloudDocs} className="rounded-lg border border-zinc-700 px-3 py-2 text-xs">{cloudLoading?"Loading…":"Refresh"}</button></div><div className="mt-4 space-y-2">{cloudDocs.slice(0,5).map(d=><div key={d.id} className="flex justify-between rounded-xl bg-zinc-950 p-3 text-sm"><span className="truncate">{d.name}</span><span className="text-zinc-600">{Math.max(1,Math.round(d.size_bytes/1024))} KB</span></div>)}{!cloudDocs.length&&<div className="text-sm text-zinc-600">No cloud documents yet.</div>}</div></div><div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Available tools</div><div className="mt-2 text-3xl font-bold">{tools.filter(t=>t.available).length}</div><div className="mt-1 text-xs text-zinc-600">Browser + AI workspace</div></div>
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Recent tools</div><div className="mt-3 space-y-2">{recentTools.slice(0,3).map(x=><div key={x} className="text-sm text-zinc-300">{x}</div>)}{!recentTools.length&&<div className="text-sm text-zinc-600">Your recent tools will appear here.</div>}</div></div>
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5"><div className="text-xs text-zinc-500">Privacy mode</div><div className="mt-2 text-lg font-semibold">Local-first</div><div className="mt-1 text-xs text-zinc-600">Cloud features are opt-in.</div></div>
+    <main className="min-h-screen bg-[#f5f7fb] text-slate-900">
+      <div className="flex min-h-screen">
+        <aside className="hidden w-[250px] shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
+          <div className="flex h-20 items-center gap-3 border-b border-slate-100 px-6">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-violet-600 text-sm font-black text-white shadow-lg shadow-violet-200">P</div>
+            <div><div className="text-lg font-extrabold tracking-tight">PDF<span className="text-violet-600">Mate</span></div><div className="text-[10px] font-semibold uppercase tracking-[.18em] text-slate-400">Workspace</div></div>
           </div>
+          <nav className="flex-1 space-y-1 p-4 text-sm font-medium">
+            <a href="#dashboard" className="flex items-center gap-3 rounded-xl bg-violet-50 px-4 py-3 text-violet-700"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Dashboard</span></a>
+            <a href="#tools" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-600 hover:bg-slate-50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><span>PDF Tools</span></a>
+            <a href="#cloud" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-600 hover:bg-slate-50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg><span>My Documents</span></a>
+            <a href="#workflow" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-600 hover:bg-slate-50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg><span>Favourites</span></a>
+            <div className="my-5 border-t border-slate-100"/>
+            <div className="px-4 pb-2 text-[10px] font-bold uppercase tracking-[.18em] text-slate-400">Workspace</div>
+            <a href="#tools" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-600 hover:bg-slate-50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="m12 3 1.5 6.5L20 11l-6.5 1.5L12 19l-1.5-6.5L4 11l6.5-1.5z"/></svg><span>AI PDF</span></a>
+            <a href="/auth" className="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-600 hover:bg-slate-50"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M12 3 20 6v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span>Account & Cloud</span></a>
+          </nav>
+          <div className="m-4 rounded-2xl bg-slate-950 p-4 text-white">
+            <div className="text-xs font-semibold">Private by default</div>
+            <p className="mt-1 text-[11px] leading-5 text-slate-400">Browser-first processing. Cloud storage is optional.</p>
+            <a href="#privacy" className="mt-3 inline-flex text-xs font-semibold text-violet-300">Privacy details →</a>
+          </div>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+            <div className="flex h-20 items-center justify-between gap-4 px-5 md:px-8">
+              <div className="flex min-w-0 items-center gap-3 lg:hidden">
+                <div className="grid h-9 w-9 place-items-center rounded-lg bg-violet-600 text-xs font-black text-white">P</div>
+                <div className="font-extrabold">PDF<span className="text-violet-600">Mate</span></div>
+              </div>
+              <div className="relative hidden max-w-xl flex-1 md:block">
+                <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></div>
+                <input aria-label="Search PDF tools" placeholder="Search tools, reports or actions…" className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"/>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => openTool(tools[0])} className="hidden rounded-xl bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-200 sm:inline-flex">+ New PDF</button>
+                <a href="/auth" className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Sign in</a>
+              </div>
+            </div>
+          </header>
+
+          <div id="dashboard" className="mx-auto max-w-[1500px] px-5 py-7 md:px-8 md:py-9">
+            <div className="flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[.18em] text-violet-600">PDFMate Dashboard</div>
+                <h1 className="mt-2 text-3xl font-extrabold tracking-tight md:text-4xl">Good to see you.</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Manage PDF work, launch tools and keep your most-used actions one click away.</p>
+              </div>
+              <button onClick={() => openTool(tools[0])} className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-200"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg><span>Upload & start</span></button>
+            </div>
+
+            <section className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-400">AVAILABLE TOOLS</span><span className="rounded-lg bg-violet-50 p-2 text-violet-600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></span></div><div className="mt-4 text-3xl font-extrabold">{tools.filter(t=>t.available).length}</div><div className="mt-1 text-xs text-slate-500">PDF operations ready</div></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-400">RECENT TOOLS</span><span className="rounded-lg bg-amber-50 p-2 text-amber-600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span></div><div className="mt-4 text-3xl font-extrabold">{recentTools.length}</div><div className="mt-1 text-xs text-slate-500">Saved on this device</div></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-400">CLOUD FILES</span><span className="rounded-lg bg-emerald-50 p-2 text-emerald-600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg></span></div><div className="mt-4 text-3xl font-extrabold">{cloudDocs.length}</div><div className="mt-1 text-xs text-slate-500">Private files available</div></div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-xs font-semibold text-slate-400">PRIVACY MODE</span><span className="rounded-lg bg-blue-50 p-2 text-blue-600"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M12 3 20 6v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span></div><div className="mt-4 text-xl font-extrabold">Local-first</div><div className="mt-1 text-xs text-slate-500">Cloud is always opt-in</div></div>
+            </section>
+
+            <section className="mt-7 grid gap-6 xl:grid-cols-[1.55fr_.9fr]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-bold">Quick actions</h2><p className="mt-1 text-xs text-slate-500">Most common PDF workflows</p></div><a href="#tools" className="text-xs font-bold text-violet-600">View all tools →</a></div>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {tools.slice(0,6).map((tool,i)=><button key={tool.id} onClick={()=>openTool(tool)} className="group flex items-center gap-3 rounded-xl border border-slate-200 p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/50"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-xs font-bold text-violet-600 group-hover:bg-violet-100">{String(i+1).padStart(2,"0")}</span><span className="min-w-0"><span className="block truncate text-sm font-semibold">{tool.name}</span><span className="mt-0.5 block truncate text-[11px] text-slate-400">{tool.description.split(".")[0]}</span></span></button>)}
+                </div>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between"><div><h2 className="text-lg font-bold">My favourites</h2><p className="mt-1 text-xs text-slate-500">Your recent PDF actions</p></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></div>
+                <div className="mt-5 space-y-2">{recentTools.slice(0,6).map((name,i)=><button key={name} onClick={()=>{const t=tools.find(x=>x.name===name);if(t)openTool(t)}} className="flex w-full items-center justify-between rounded-xl bg-slate-50 px-4 py-3 text-left text-sm font-medium hover:bg-violet-50"><span className="truncate">{name}</span><span className="text-violet-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></button>)}{!recentTools.length&&<div className="rounded-xl border border-dashed border-slate-200 p-5 text-center text-xs text-slate-400">Open a tool and it will appear here.</div>}</div>
+              </div>
+            </section>
+
+            <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" id="tools">
+              <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="text-xs font-bold uppercase tracking-[.18em] text-violet-600">PDF TOOLKIT</div><h2 className="mt-1 text-2xl font-extrabold">All tools</h2><p className="mt-1 text-sm text-slate-500">Choose an operation and work directly in the PDF workspace.</p></div><span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">{tools.length} tools</span></div>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {tools.map(tool=><button key={tool.id} onClick={()=>tool.available&&openTool(tool)} disabled={!tool.available} className="group rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md disabled:cursor-default disabled:opacity-50"><div className="flex items-start justify-between"><span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-xs font-extrabold text-violet-600">PDF</span><span className="pt-2 text-slate-300 transition group-hover:text-violet-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></div><h3 className="mt-4 text-sm font-bold">{tool.name}</h3><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{tool.description}</p></button>)}
+              </div>
+            </section>
+
+            <section id="cloud" className="mt-7 grid gap-6 xl:grid-cols-[1.2fr_.8fr]">
+              <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-bold">My documents</h2><p className="mt-1 text-xs text-slate-500">Private cloud files saved by you</p></div><button onClick={loadCloudDocs} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold">{cloudLoading?"Loading…":"Refresh"}</button></div>
+                <div className="mt-5 space-y-2">{cloudDocs.slice(0,8).map(doc=><div key={doc.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3"><div className="min-w-0"><div className="truncate text-sm font-semibold">{doc.name}</div><div className="text-[11px] text-slate-400">{Math.max(1,Math.round(doc.size_bytes/1024))} KB</div></div><div className="flex gap-2"><button onClick={()=>downloadCloudDocument(doc.id).catch(e=>setStatus(e instanceof Error?e.message:"Download failed."))} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-violet-600">Open</button><button onClick={()=>deleteCloudDocument(doc.id).catch(e=>setStatus(e instanceof Error?e.message:"Delete failed."))} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-500">Delete</button></div></div>)}{!cloudDocs.length&&!cloudLoading&&<div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-400">No cloud files yet. Sign in and save a document from any tool.</div>}</div>
+              </div>
+              <div id="workflow" className="rounded-2xl bg-slate-950 p-6 text-white shadow-sm"><div className="text-xs font-bold uppercase tracking-[.18em] text-violet-300">WORKFLOW</div><h2 className="mt-2 text-xl font-bold">Simple, controlled PDF flow</h2><div className="mt-6 space-y-4">{["Choose a tool","Process in the browser","Download or save privately"].map((x,i)=><div key={x} className="flex gap-4"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-300">{String(i+1).padStart(2,"0")}</div><div><div className="text-sm font-semibold">{x}</div><div className="mt-1 text-xs leading-5 text-slate-400">No unnecessary uploads for browser-supported operations.</div></div></div>)}</div></div>
+            </section>
+          </div>
+          <footer id="privacy" className="border-t border-slate-200 bg-white px-5 py-7 text-center text-xs text-slate-400 md:px-8">PDFMate · Privacy-first PDF workspace · Browser-first processing</footer>
         </div>
-      </section>
-      <section id="tools" className="mx-auto max-w-7xl px-6 pb-24">
-        <div className="flex flex-wrap items-end justify-between gap-4"><div><h2 className="text-3xl font-semibold">PDF tools</h2><p className="mt-2 text-zinc-500">Browser operations are ready. Secure server features can use the same workspace.</p></div><span className="rounded-full border border-zinc-800 px-3 py-1 text-xs text-zinc-500">{tools.length} tools</span></div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {tools.map(tool => <article key={tool.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 transition hover:border-violet-500/40">
-            <div className="mb-7 flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">PDF</div>
-            <h3 className="font-semibold">{tool.name}</h3><p className="mt-2 min-h-12 text-sm leading-6 text-zinc-500">{tool.description}</p>
-            <button onClick={() => tool.available && openTool(tool)} disabled={!tool.available} className="mt-5 text-sm text-violet-300 hover:text-violet-200 disabled:cursor-default disabled:text-zinc-600">{tool.available ? "Open tool →" : "Coming soon"}</button>
-          </article>)}
-        </div>
-      </section>
-
-      <section id="workflow" className="border-y border-zinc-900 bg-zinc-950 px-6 py-20">
-        <div className="mx-auto max-w-5xl"><h2 className="text-3xl font-semibold">One workspace, simple flow</h2><div className="mt-8 grid gap-4 md:grid-cols-3">{["Choose a tool","Process locally","Download result"].map((x,i)=><div key={x} className="rounded-2xl border border-zinc-800 p-6"><div className="text-sm text-violet-300">0{i+1}</div><h3 className="mt-4 font-semibold">{x}</h3><p className="mt-2 text-sm text-zinc-500">Focused controls with no unnecessary document uploads.</p></div>)}</div></div>
-      </section>
-      <section id="cloud" className="mx-auto max-w-7xl px-6 pb-20"><div className="rounded-3xl border border-zinc-800 bg-zinc-950/70 p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-xl font-semibold">Private cloud files</h2><p className="mt-1 text-sm text-zinc-500">Files are stored only after you sign in and choose Save to cloud.</p></div><button type="button" onClick={()=>loadCloudDocs()} className="rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-400">Refresh</button></div><div className="mt-5 space-y-2">{cloudDocs.map(doc=><div key={doc.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 p-3"><div className="min-w-0"><div className="truncate text-sm">{doc.name}</div><div className="text-xs text-zinc-600">{Math.max(0,Math.round(doc.size_bytes/1024))} KB</div></div><div className="flex gap-2"><button type="button" onClick={()=>downloadCloudDocument(doc.id).catch(e=>setStatus(e instanceof Error?e.message:"Download failed."))} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-violet-300">Open</button><button type="button" onClick={()=>deleteCloudDocument(doc.id).catch(e=>setStatus(e instanceof Error?e.message:"Delete failed."))} className="rounded-lg border border-zinc-800 px-3 py-1.5 text-xs text-red-300">Delete</button></div></div>)}{!cloudDocs.length&&!cloudLoading&&<div className="text-sm text-zinc-600">No cloud files yet. Sign in and save a document from any tool.</div>}{cloudLoading&&<div className="text-sm text-zinc-600">Loading cloud files…</div>}</div></div></section><footer id="privacy" className="mx-auto max-w-7xl px-6 py-10 text-sm text-zinc-600">PDFMate · Privacy-first PDF workspace</footer>
-
-      <input ref={input} hidden type="file" multiple accept={active?.accept} onChange={e => setFiles(Array.from(e.target.files || []))}/>
-
+      </div>
       {active && <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/80 p-4" role="dialog" aria-modal="true">
         <div className="my-6 w-full max-w-xl rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
           <div className="flex items-start justify-between"><div><h2 className="text-xl font-semibold">{active.name}</h2><p className="mt-1 text-sm text-zinc-500">{active.description}</p></div><button onClick={() => setActive(null)} className="rounded-lg px-2 py-1 text-zinc-400">✕</button></div>
@@ -470,6 +515,8 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
           <p className="mt-5 text-center text-xs text-zinc-600">Browser-supported operations run locally. Password encryption and advanced optimization/conversion use the secure server worker.</p>
         </div>
       </div>}
+    </main>
+  );
     </main>
   );
 }
