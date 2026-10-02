@@ -2,7 +2,6 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import crypto from "node:crypto";
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import Busboy from "busboy";
@@ -23,7 +22,7 @@ async function parse(req){
       stream.on("end",()=>{if(name==="file")file={buffer:Buffer.concat(chunks),name:info.filename||"input.pdf"};});
     });
     bb.on("field",(name,value)=>{if(name==="password")password=value;if(name==="action")action=value;});
-    bb.on("error",reject); bb.on("finish",()=>resolve({file,password}));
+    bb.on("error",reject); bb.on("finish",()=>resolve({file,password,action}));
     req.pipe(bb);
   });
 }
@@ -37,7 +36,7 @@ async function main(req,res){
   try{
     const {file,password,action}=await parse(req);
     if(!file)return send(res,400,"application/json",JSON.stringify({error:"file is required"}));
-    if(!password || password.length<8)return send(res,400,"application/json",JSON.stringify({error:"password must be at least 8 characters"}));
+    if(action==="protect" && (!password || password.length<8))return send(res,400,"application/json",JSON.stringify({error:"password must be at least 8 characters"}));
     const input=path.join(tmp,"input"+path.extname(file.name||".pdf")), output=path.join(tmp,"output.pdf");
     await fs.writeFile(input,file.buffer);
     if(action==="protect"){
