@@ -267,12 +267,6 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         if (!response.ok) throw new Error(data?.error || "AI request failed.");
         setAiAnswer(data.text || "No answer returned."); setStatus("AI answer ready."); return;
       }
-      if (active.action === "compress") {
-        const bytes = await compressPdf(files[0]);
-        downloadPdf(bytes, "pdfmate-optimized.pdf");
-        setStatus("Optimized PDF created locally. Size reduction depends on the source PDF.");
-        return;
-      }
       if (active.action === "pdfimages") {
         const images = await pdfToImages(files[0], imageFormat);
         const zip = new JSZip();
