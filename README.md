@@ -14,6 +14,10 @@ Privacy-first browser PDF workspace built with Next.js, TypeScript, Tailwind CSS
 - JPG/PNG to PDF
 - PDF to PNG/JPG
 - Sign PDF with a drawn signature
+- Resize PDF
+- Edit PDF with text, highlights, boxes and lines
+- Fill PDF forms
+- OCR scanned PDF pages locally
 - AI PDF text Q&A
 
 The listed document operations process files in the browser. PDFMate does not upload those files for the local tools.
@@ -32,7 +36,7 @@ PDF text is extracted in the browser before the selected text is sent to the AI 
 
 ## Reserved server pipeline
 
-Compression, password encryption, OCR, PDF/A, Office conversion and advanced repair/editing require a real server/worker pipeline. PDFMate does not fake these operations in the browser.
+Compression, password encryption, PDF/A, Office conversion and advanced repair/editing require a real server/worker pipeline. OCR is currently available as a browser-local text recognition tool. PDFMate does not fake these operations in the browser.
 
 ## Development
 
