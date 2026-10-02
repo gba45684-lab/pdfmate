@@ -10,7 +10,7 @@ import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-
 import { extractPdfText } from "../lib/pdf-ai";
 import { ocrPdf, ocrPdfSearchable } from "../lib/pdf-ocr";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact"|"protect";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact"|"protect"|"office";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
@@ -36,7 +36,8 @@ const tools: Tool[] = [
   { id:"edit", name:"Edit PDF", description:"Add text, highlights, boxes and lines to PDF pages.", accept:".pdf,application/pdf", available:true, action:"edit" },
   { id:"forms", name:"Fill PDF Forms", description:"Detect and fill standard AcroForm text fields locally.", accept:".pdf,application/pdf", available:true, action:"forms" },
   { id:"ocr", name:"OCR PDF", description:"Recognize text in scanned PDF pages locally.", accept:".pdf,application/pdf", available:true, action:"ocr" },
-  { id:"compress", name:"Optimize PDF", description:"Reduce PDF overhead and metadata locally when possible.", accept:".pdf,application/pdf", available:true, action:"compress" },
+  { id:"compress", name:"Optimize PDF", description:"Use the secure qpdf worker for deeper PDF optimization.", accept:".pdf,application/pdf", available:true, action:"compress" },
+  { id:"office", name:"Office to PDF", description:"Convert DOCX, XLSX or PPTX files using the isolated LibreOffice worker.", accept:".doc,.docx,.xls,.xlsx,.ppt,.pptx", available:true, action:"office" },
   { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:true, action:"protect" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
 ];
@@ -186,6 +187,12 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         downloadPdf(bytes, "pdfmate-redacted.pdf");
         setStatus("Redacted PDF created locally.");
         return;
+      }
+      if (active.action === "office") {
+        const form=new FormData(); form.append("file",files[0]); form.append("action","office-to-pdf");
+        const response=await fetch("/api/pdf/worker",{method:"POST",body:form});
+        if(!response.ok){const data=await response.json().catch(()=>null);throw new Error(data?.error||"Office conversion failed.");}
+        downloadBlob(await response.blob(),"pdfmate-converted.pdf"); setStatus("Converted PDF downloaded."); return;
       }
       if (active.action === "compress") {
         const form=new FormData(); form.append("file",files[0]); form.append("action","compress");
