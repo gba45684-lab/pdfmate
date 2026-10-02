@@ -82,9 +82,17 @@ export default function Home() {
   }
 
   async function loadOrganizer(file: File) {
-    setStatus("Creating page previews locally…");
+    setStatus("Checking page count…");
     try {
-      const pages = await renderPdfPreviews(file);
+      const { getPdfPageCount } = await import("../lib/pdf-tools");
+      const count = await getPdfPageCount(file);
+      if (count > 60) {
+        setPreviews([]); setOrder([]);
+        setStatus("This PDF has " + count + " pages. Visual arranging is limited to 60 pages; use the page-order field below.");
+        return;
+      }
+      setStatus("Creating page previews locally…");
+      const pages = await renderPdfPreviews(file, 60);
       setPreviews(pages);
       setOrder(pages.map((page) => page.index));
       setStatus(pages.length + " page previews ready.");
