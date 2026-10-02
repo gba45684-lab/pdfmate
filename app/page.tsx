@@ -10,7 +10,7 @@ import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-
 import { extractPdfText } from "../lib/pdf-ai";
 import { ocrPdf, ocrPdfSearchable } from "../lib/pdf-ocr";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact"|"protect";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
@@ -37,7 +37,7 @@ const tools: Tool[] = [
   { id:"forms", name:"Fill PDF Forms", description:"Detect and fill standard AcroForm text fields locally.", accept:".pdf,application/pdf", available:true, action:"forms" },
   { id:"ocr", name:"OCR PDF", description:"Recognize text in scanned PDF pages locally.", accept:".pdf,application/pdf", available:true, action:"ocr" },
   { id:"compress", name:"Optimize PDF", description:"Reduce PDF overhead and metadata locally when possible.", accept:".pdf,application/pdf", available:true, action:"compress" },
-  { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
+  { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:true, action:"protect" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
 ];
 
@@ -76,6 +76,7 @@ export default function Home() {
   const [ocrProgress, setOcrProgress] = useState(0);
 const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [ocrSearchable, setOcrSearchable] = useState(true);
+  const [protectPassword, setProtectPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [redactWidth, setRedactWidth] = useState(180);
@@ -173,6 +174,12 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         downloadPdf(bytes, "pdfmate-redacted.pdf");
         setStatus("Redacted PDF created locally.");
         return;
+      }
+      if (active.action === "protect") {
+        if (!protectPassword || protectPassword.length < 8) throw new Error("Use a password of at least 8 characters.");
+        const response = await fetch("/api/pdf/protect", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ password: protectPassword }) });
+        if (!response.ok) throw new Error("Secure PDF protection is not configured yet.");
+        setStatus("Protection request sent to the secure PDF worker."); return;
       }
       if (active.action === "auto") {
         const info = await inspectPdf(files[0]);
@@ -362,7 +369,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   <div className="grid grid-cols-3 gap-3"><input type="number" value={editY} onChange={e=>setEditY(Number(e.target.value)||0)} placeholder="Y" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={redactWidth} onChange={e=>setRedactWidth(Number(e.target.value)||1)} placeholder="Width" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={redactHeight} onChange={e=>setRedactHeight(Number(e.target.value)||1)} placeholder="Height" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/></div>
   <p className="text-xs text-red-300">Use the visual editor coordinates or PDF-point measurements. Verify the exported PDF before sharing.</p>
 </div>}
-{active.action === "auto" && <div className="mt-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+{active.action === "protect" && <div className="mt-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5"><p className="text-sm text-zinc-300">Secure password encryption runs server-side.</p><input type="password" value={protectPassword} onChange={e=>setProtectPassword(e.target.value)} placeholder="Minimum 8 characters" className="mt-4 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/></div>}{active.action === "auto" && <div className="mt-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
   <p className="text-sm text-zinc-400">Auto Mode inspects the document locally and recommends the next PDF operation.</p>
   {autoReport && <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><div className="text-zinc-500">Pages</div><div className="mt-1 text-lg font-semibold">{autoReport.pages}</div></div>
