@@ -86,6 +86,9 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [status, setStatus] = useState("");
   const [redactWidth, setRedactWidth] = useState(180);
   const [redactHeight, setRedactHeight] = useState(40);
+  const [toolSearch, setToolSearch] = useState("");
+  const [toolCategory, setToolCategory] = useState("All");
+  const toolCategories = ["All","Organize","Edit","Convert","Smart"] as const;
   const [recentTools, setRecentTools] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try { return JSON.parse(localStorage.getItem("pdfmate-recent-tools") || "[]"); } catch { return []; }
@@ -97,6 +100,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [previews, setPreviews] = useState<PdfPagePreview[]>([]);
   const [order, setOrder] = useState<number[]>([]);
   const [dragPage, setDragPage] = useState<number | null>(null);
+  const visibleTools = tools.filter((tool) => {
+    const category = tool.id === "ai" || tool.id === "auto" || tool.id === "ocr" || tool.id === "compress" || tool.id === "protect" ? "Smart" :
+      ["merge","split","extract","delete","rotate","reorder","crop","resize"].includes(tool.id) ? "Organize" :
+      ["images","pdfimages","office"].includes(tool.id) ? "Convert" : "Edit";
+    const q = toolSearch.trim().toLowerCase();
+    return (toolCategory === "All" || category === toolCategory) && (!q || (tool.name + " " + tool.description).toLowerCase().includes(q));
+  });
 
 
   useEffect(() => {
@@ -391,7 +401,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
               </div>
               <div className="relative hidden max-w-xl flex-1 md:block">
                 <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-slate-400"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></div>
-                <input aria-label="Search PDF tools" placeholder="Search tools, reports or actions…" className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"/>
+                <input aria-label="Search PDF tools" value={toolSearch} onChange={e=>setToolSearch(e.target.value)} placeholder="Search tools, reports or actions…" className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-12 pr-4 text-sm outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"/>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => openTool(tools[0])} aria-label="Create new PDF" className="grid h-10 w-10 place-items-center rounded-xl bg-violet-600 text-white shadow-md shadow-violet-200 sm:h-auto sm:w-auto sm:px-4 sm:py-2.5 sm:text-sm sm:font-semibold"><span className="text-lg leading-none sm:hidden">+</span><span className="hidden sm:inline">+ New PDF</span></button>
@@ -431,9 +441,9 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
             </section>
 
             <section className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:mt-7 sm:p-6" id="tools">
-              <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="text-xs font-bold uppercase tracking-[.18em] text-violet-600">PDF TOOLKIT</div><h2 className="mt-1 text-2xl font-extrabold">All tools</h2><p className="mt-1 text-sm text-slate-500">Choose an operation and work directly in the PDF workspace.</p></div><span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">{tools.length} tools</span></div>
-              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
-                {tools.map(tool=><button key={tool.id} onClick={()=>tool.available&&openTool(tool)} disabled={!tool.available} className="group rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md disabled:cursor-default disabled:opacity-50"><div className="flex items-start justify-between"><span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-xs font-extrabold text-violet-600">PDF</span><span className="pt-2 text-slate-300 transition group-hover:text-violet-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></div><h3 className="mt-4 text-sm font-bold">{tool.name}</h3><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{tool.description}</p></button>)}
+              <div className="flex flex-wrap items-end justify-between gap-4"><div><div className="text-xs font-bold uppercase tracking-[.18em] text-violet-600">PDF TOOLKIT</div><h2 className="mt-1 text-2xl font-extrabold">All tools</h2><p className="mt-1 text-sm text-slate-500">Choose an operation and work directly in the PDF workspace.</p></div><span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-500">{visibleTools.length} {visibleTools.length===1?"tool":"tools"}</span></div>
+              <div className="mt-4 flex gap-2 overflow-x-auto px-1 pb-1" role="tablist" aria-label="Tool categories">{toolCategories.map(category=><button key={category} type="button" role="tab" aria-selected={toolCategory===category} onClick={()=>setToolCategory(category)} className={"shrink-0 rounded-full border px-4 py-2 text-xs font-bold transition "+(toolCategory===category?"border-violet-600 bg-violet-600 text-white":"border-slate-200 bg-white text-slate-600 hover:border-violet-200 hover:bg-violet-50")}>{category}</button>)}</div><div className="mt-4 grid grid-cols-2 gap-2.5 sm:mt-6 sm:gap-3 lg:grid-cols-3 xl:grid-cols-4">
+                {visibleTools.map(tool=><button key={tool.id} onClick={()=>tool.available&&openTool(tool)} disabled={!tool.available} className="group rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md disabled:cursor-default disabled:opacity-50"><div className="flex items-start justify-between"><span className="grid h-10 w-10 place-items-center rounded-xl bg-violet-50 text-xs font-extrabold text-violet-600">PDF</span><span className="pt-2 text-slate-300 transition group-hover:text-violet-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span></div><h3 className="mt-4 text-sm font-bold">{tool.name}</h3><p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{tool.description}</p></button>)}
               </div>
             </section>
 
