@@ -345,7 +345,8 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         case "watermark": bytes = await addWatermark(files[0], text || "PDFMate"); name = "pdfmate-watermarked.pdf"; break;
         case "pagenumbers": bytes = await addPageNumbers(files[0]); name = "pdfmate-numbered.pdf"; break;
         case "crop": bytes = await cropPages(files[0], Number(spec) || 24); name = "pdfmate-cropped.pdf"; break;
-        case "flatten": bytes = await flattenPdf(files[0]); name = "pdfmate-flattened.pdf"; break;\n        case "resize": bytes = await resizePdf(files[0], pageSize); name = "pdfmate-" + pageSize + ".pdf"; break;
+        case "flatten": bytes = await flattenPdf(files[0]); name = "pdfmate-flattened.pdf"; break;
+        case "resize": bytes = await resizePdf(files[0], pageSize); name = "pdfmate-" + pageSize + ".pdf"; break;
         default: throw new Error("This tool is not available yet.");
       }
       downloadPdf(bytes, name);
