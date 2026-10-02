@@ -241,7 +241,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       if (active.action === "auto") {
         const info = await inspectPdf(files[0]);
         const extracted = await extractPdfText(files[0], Math.min(info.pages, 5), 12000);
-        const hasText = extracted.replace(/--- Page \\d+ ---/g, "").trim().length > 80;
+        const hasText = extracted.replace(/--- Page \d+ ---/g, "").trim().length > 80;
         const recommendation = info.formFields > 0
           ? "Fill PDF Forms — this document contains " + info.formFields + " form field(s)."
           : hasText
@@ -412,7 +412,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         <div className="my-6 w-full max-w-xl rounded-3xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
           <div className="flex items-start justify-between"><div><h2 className="text-xl font-semibold">{active.name}</h2><p className="mt-1 text-sm text-zinc-500">{active.description}</p></div><button onClick={() => setActive(null)} className="rounded-lg px-2 py-1 text-zinc-400">✕</button></div>
           <button onClick={() => input.current?.click()} className="mt-6 w-full rounded-2xl border border-dashed border-zinc-700 px-5 py-9 text-sm hover:border-violet-400">{files.length ? String(files.length) + " file(s) selected — choose again" : "Choose files"}</button>
-          {files.length > 0 && <div className="mt-3 max-h-24 overflow-auto rounded-xl bg-zinc-900 p-3 text-sm text-zinc-400">{files.map(f => <div key={f.name + f.size} className="truncate">{f.name}</div>)}</div>}
+          {files.length > 0 && <div className="mt-3 max-h-24 overflow-auto rounded-xl bg-zinc-900 p-3 text-sm text-zinc-400">{files.map(f => <div key={f.name + f.size} className="truncate">{f.name}</div>)}</div>}{files.length > 0 && <button type="button" disabled={cloudSaving} onClick={()=>saveCloudDocument(files[0]).catch(e=>setStatus(e instanceof Error?e.message:"Cloud save failed."))} className="mt-3 w-full rounded-xl border border-violet-500/30 px-4 py-3 text-sm text-violet-300 disabled:opacity-50">{cloudSaving ? "Saving to cloud…" : "Save original to private cloud"}</button>}
           {active.id === "reorder" && files[0] && <button onClick={() => loadOrganizer(files[0])} className="mt-4 w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Preview & arrange pages</button>}
           {active.id === "reorder" && order.length > 0 && <div className="mt-4 grid max-h-72 grid-cols-3 gap-3 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 sm:grid-cols-4">
             {order.map((pageNumber) => { const preview = previews.find((item) => item.index === pageNumber); return <div key={pageNumber} draggable onDragStart={() => setDragPage(pageNumber)} onDragOver={(e) => e.preventDefault()} onDrop={() => { if (dragPage !== null) movePage(dragPage, pageNumber); setDragPage(null); }} className="cursor-grab rounded-lg border border-zinc-800 bg-zinc-950 p-2 active:cursor-grabbing"><div className="aspect-[3/4] overflow-hidden rounded bg-white">{preview && <img src={preview.url} alt={"Page " + pageNumber} className="h-full w-full object-contain"/></div><div className="pt-2 text-center text-xs text-zinc-400">Page {pageNumber}</div></div>; })}
