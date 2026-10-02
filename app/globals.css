@@ -1,5 +1,93 @@
 @import "tailwindcss";
-:root{color-scheme:dark}
+
+:root{
+  color-scheme:light;
+  --pm-primary:#5b21b6;
+  --pm-primary-2:#7c3aed;
+  --pm-accent:#f2b544;
+  --pm-ink:#172033;
+  --pm-muted:#667085;
+  --pm-border:#e7e9ef;
+  --pm-surface:#ffffff;
+  --pm-bg:#f6f7fb;
+}
+
 *{box-sizing:border-box}
-body{margin:0;background:#09090b;color:#fafafa;font-family:Arial,Helvetica,sans-serif}
-button,input{font:inherit}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:var(--pm-bg);
+  color:var(--pm-ink);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+button,input,select,textarea{font:inherit}
+button{transition:transform .16s ease,box-shadow .16s ease,background-color .16s ease,border-color .16s ease}
+button:active{transform:translateY(1px)}
+::selection{background:#ddd6fe;color:#3b0764}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#c9cdd8;border-radius:999px}
+::-webkit-scrollbar-thumb:hover{background:#aeb4c2}
+
+/* PDFMate modern enterprise SaaS tokens — Prudent-inspired purple/gold accents. */
+.bg-violet-600{background-color:var(--pm-primary)!important}
+.bg-violet-500{background-color:var(--pm-primary-2)!important}
+.text-violet-600,.text-violet-700{color:var(--pm-primary)!important}
+.text-violet-500{color:var(--pm-primary-2)!important}
+.border-violet-500{border-color:#7c3aed!important}
+.bg-violet-50{background:#f5f0ff!important}
+.hover\\:bg-violet-50:hover{background:#f5f0ff!important}
+.shadow-violet-200{--tw-shadow-color:#ddd6fe!important}
+.ring-violet-100{--tw-ring-color:#ede9fe!important}
+
+/* Premium surface treatment without changing the information architecture. */
+.rounded-2xl.border-slate-200.bg-white,
+.rounded-2xl.border-slate-200.bg-white.shadow-sm{
+  border-color:var(--pm-border);
+  box-shadow:0 1px 2px rgba(16,24,40,.03),0 10px 30px rgba(16,24,40,.035);
+}
+.rounded-xl.border-slate-200.bg-white:hover{
+  box-shadow:0 10px 28px rgba(91,33,182,.10);
+}
+header.sticky{
+  box-shadow:0 1px 0 rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.035);
+}
+aside{
+  box-shadow:8px 0 30px rgba(16,24,40,.025);
+}
+aside .bg-slate-950{
+  background:linear-gradient(145deg,#21113f 0%,#120d20 100%)!important;
+}
+aside .bg-slate-950 .text-violet-300{color:#d8b4fe!important}
+#workflow{
+  background:linear-gradient(135deg,#24123f 0%,#100c1b 68%,#18111f 100%)!important;
+  box-shadow:0 18px 50px rgba(32,16,54,.16);
+}
+#dashboard>div:first-child{
+  position:relative;
+}
+#dashboard>div:first-child:after{
+  content:"";
+  position:absolute;
+  right:4%;
+  top:-28px;
+  width:180px;
+  height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle,#ede9fe 0%,rgba(237,233,254,0) 70%);
+  pointer-events:none;
+  z-index:-1;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:#8b5cf6!important;
+  box-shadow:0 0 0 4px rgba(124,58,237,.10);
+}
+@media (max-width:1023px){
+  header.sticky{background:rgba(255,255,255,.88)!important}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*:before,*:after{transition:none!important;animation:none!important}
+}
