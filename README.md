@@ -61,3 +61,5 @@ Production checks:
 - ZIP packaging for PDF-to-image exports.
 
 These patterns were informed by public open-source PDF projects including ClawPDF, PDF Tools Suite, Paperless PDF and browser PDF editors; PDFMate implements the useful ideas independently rather than copying project code.
+
+- Local recent-tool history for faster repeat workflows
