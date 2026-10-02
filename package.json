@@ -14,7 +14,8 @@
     "react-dom": "latest",
     "pdf-lib": "latest",
     "pdfjs-dist": "latest",
-    "tesseract.js": "latest"
+    "tesseract.js": "latest",
+    "jszip": "latest"
   },
   "devDependencies": {
     "@types/node": "latest",
