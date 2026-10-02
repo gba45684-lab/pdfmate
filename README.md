@@ -71,3 +71,5 @@ These patterns were informed by public open-source PDF projects including ClawPD
 - Storage owner policy in `supabase/schema.sql`
 
 Configure the Supabase project and private `documents` bucket before enabling cloud uploads.
+
+- Optional cloud history panel backed by Supabase-authenticated document metadata
