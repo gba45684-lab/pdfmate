@@ -189,9 +189,15 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
       }
       if (active.action === "protect") {
         if (!protectPassword || protectPassword.length < 8) throw new Error("Use a password of at least 8 characters.");
-        const response = await fetch("/api/pdf/protect", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ password: protectPassword }) });
-        if (!response.ok) throw new Error("Secure PDF protection is not configured yet.");
-        setStatus("Protection request sent to the secure PDF worker."); return;
+        const form = new FormData();
+        form.append("file", files[0]);
+        form.append("password", protectPassword);
+        const response = await fetch("/api/pdf/protect", { method:"POST", body: form });
+        if (!response.ok) { const data=await response.json().catch(()=>null); throw new Error(data?.error || "Secure PDF protection failed."); }
+        const protectedPdf = await response.blob();
+        downloadBlob(protectedPdf, "pdfmate-protected.pdf");
+        setStatus("Protected PDF downloaded.");
+        return;
       }
       if (active.action === "auto") {
         const info = await inspectPdf(files[0]);
