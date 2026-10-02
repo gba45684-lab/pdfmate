@@ -37,7 +37,7 @@ const tools: Tool[] = [
   { id:"forms", name:"Fill PDF Forms", description:"Detect and fill standard AcroForm text fields locally.", accept:".pdf,application/pdf", available:true, action:"forms" },
   { id:"ocr", name:"OCR PDF", description:"Recognize text in scanned PDF pages locally.", accept:".pdf,application/pdf", available:true, action:"ocr" },
   { id:"compress", name:"Optimize PDF", description:"Use the secure qpdf worker for deeper PDF optimization.", accept:".pdf,application/pdf", available:true, action:"compress" },
-  { id:"office", name:"Office to PDF", description:"Convert DOCX, XLSX or PPTX files using the isolated LibreOffice worker.", accept:".doc,.docx,.xls,.xlsx,.ppt,.pptx", available:true, action:"office" },
+  { id:"office", name:"Office to PDF", description:"Convert DOCX, XLSX or PPTX files using the isolated LibreOffice worker.", accept:".doc,.docx,.xls,.xlsx,.ppt,.pptx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation", available:true, action:"office" },
   { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:true, action:"protect" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
 ];
@@ -123,7 +123,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   function openTool(tool: Tool) {
     setRecentTools(prev => { const next=[tool.name,...prev.filter(x=>x!==tool.name)].slice(0,6); try { localStorage.setItem("pdfmate-recent-tools", JSON.stringify(next)); } catch {} return next; });
-    setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
+    setActive(tool); setFiles([]); setPreviews([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
     setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setEditW(180); setEditH(40); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng"); setOcrSearchable(true);
     requestAnimationFrame(() => input.current?.click());
   }
