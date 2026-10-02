@@ -11,6 +11,12 @@ Merge, split, reorder, annotations, redaction overlays, forms, OCR and searchabl
 - **Rate limiting:** the AI route now has a basic per-process guard; production should move this to a shared store such as Upstash/Redis or an equivalent edge rate limiter.
 - **Cloud history:** Supabase auth + RLS document metadata are now scaffolded. Storage upload/download policies should be enabled only after the Storage bucket and retention policy are configured.
 
+## Isolated worker
+
+The `worker/` container provides qpdf-backed 256-bit PDF encryption, qpdf optimization and LibreOffice Office-to-PDF conversion. Deploy it separately from Vercel on a private network, set `PDF_WORKER_TOKEN`, and point `PDF_WORKER_URL` at the private worker through an authenticated proxy. The container uses a read-only filesystem, a temporary filesystem and drops Linux capabilities.
+
+Secure redaction still requires content removal and verification; the browser overlay is not legal-grade redaction.
+
 ## Required production secrets
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
