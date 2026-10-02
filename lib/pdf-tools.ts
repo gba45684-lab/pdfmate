@@ -280,3 +280,22 @@ export async function compressPdf(file: File) {
 export async function rotateAllPages(file: File, angle: number) {
   return rotatePages(file, "", angle);
 }
+
+
+export async function inspectPdf(file: File) {
+  const src = await loadPdf(file);
+  const pages = src.getPages();
+  const formFields = src.getForm().getFields().length;
+  const sizes = pages.map((page) => ({ width: Math.round(page.getWidth()), height: Math.round(page.getHeight()) }));
+  const portrait = sizes.filter((s) => s.height >= s.width).length;
+  const landscape = sizes.length - portrait;
+  return {
+    pages: pages.length,
+    formFields,
+    portrait,
+    landscape,
+    encrypted: false,
+    averageWidth: sizes.length ? Math.round(sizes.reduce((sum, s) => sum + s.width, 0) / sizes.length) : 0,
+    averageHeight: sizes.length ? Math.round(sizes.reduce((sum, s) => sum + s.height, 0) / sizes.length) : 0,
+  };
+}
