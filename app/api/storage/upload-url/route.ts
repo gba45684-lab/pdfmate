@@ -3,7 +3,7 @@ import {createServerClient} from "@supabase/ssr";
 import {cookies} from "next/headers";
 export async function POST(request:NextRequest){
   const bucket=process.env.SUPABASE_STORAGE_BUCKET||"documents";
-  const response=NextResponse.json({error:"Upload URL unavailable"},{status:500});
+  const response=NextResponse.next();
   const store=await cookies();
   const supabase=createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{cookies:{getAll:()=>store.getAll(),setAll:(items)=>items.forEach(({name,value,options})=>response.cookies.set(name,value,options))}});
   const {data:{user}}=await supabase.auth.getUser();
@@ -14,5 +14,5 @@ export async function POST(request:NextRequest){
   const path=user.id+"/"+crypto.randomUUID()+"-"+safe;
   const {data,error}=await supabase.storage.from(bucket).createSignedUploadUrl(path);
   if(error)return NextResponse.json({error:error.message},{status:500});
-  return NextResponse.json({bucket,path,token:data.token},{headers:{"Cache-Control":"no-store"}});
+  const out=NextResponse.json({bucket,path,token:data.token},{headers:{"Cache-Control":"no-store"}}); for(const cookie of response.cookies.getAll()) out.cookies.set(cookie); return out;
 }
