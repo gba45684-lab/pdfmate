@@ -4,19 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, mergePdfs, reorderPages, resizePdf, rotatePages
+  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 import { ocrPdf } from "../lib/pdf-ocr";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
 };
 
 const tools: Tool[] = [
+  { id:"auto", name:"Auto PDF Mode", description:"Inspect your PDF and choose the most useful next action automatically.", accept:".pdf,application/pdf", available:true, action:"auto" },
   { id:"merge", name:"Merge PDF", description:"Combine multiple PDFs in the order you choose.", accept:".pdf,application/pdf", available:true, action:"merge" },
   { id:"split", name:"Split PDF", description:"Extract any page range into a new PDF.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"extract" },
   { id:"extract", name:"Extract Pages", description:"Create a new PDF from selected pages.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"extract" },
@@ -73,6 +74,7 @@ export default function Home() {
 const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [autoReport, setAutoReport] = useState<{pages:number;formFields:number;portrait:number;landscape:number;recommendation:string}|null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
   const [signatureReady, setSignatureReady] = useState(false);
@@ -96,7 +98,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   function openTool(tool: Tool) {
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
-    setSignatureReady(false); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng");
+    setSignatureReady(false); setAutoReport(null); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng");
     requestAnimationFrame(() => input.current?.click());
   }
 
@@ -153,6 +155,19 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     if (!active || !active.available || !files.length) return;
     setBusy(true); setStatus(active.id === "ai" ? "Reading PDF text locally…" : "Processing locally…");
     try {
+      if (active.action === "auto") {
+        const info = await inspectPdf(files[0]);
+        const extracted = await extractPdfText(files[0], Math.min(info.pages, 5), 12000);
+        const hasText = extracted.replace(/--- Page \\d+ ---/g, "").trim().length > 80;
+        const recommendation = info.formFields > 0
+          ? "Fill PDF Forms — this document contains " + info.formFields + " form field(s)."
+          : hasText
+            ? "Optimize PDF or Edit PDF — selectable text is present, so OCR is usually unnecessary."
+            : "OCR PDF — little/no selectable text was detected, so this appears suitable for OCR.";
+        setAutoReport({...info, recommendation});
+        setStatus("Auto analysis complete.");
+        return;
+      }
       if (active.id === "ai") {
         const extracted = await extractPdfText(files[0]);
         if (!extracted.trim()) throw new Error("No selectable text was found in this PDF.");
