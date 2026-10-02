@@ -320,7 +320,7 @@ export async function redactPages(file: File, redactions: Array<{page:number;x:n
 export async function secureRedactPdf(file: File, redactions: Array<{page:number;x:number;y:number;width:number;height:number}>) {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const source = new Uint8Array(await file.arrayBuffer());
-  const pdf = await pdfjs.getDocument({ data: source, disableWorker: true }).promise;
+  const pdf = await pdfjs.getDocument({ data: source, disableWorker: true } as any).promise;
   const out = await PDFDocument.create();
   const byPage = new Map<number, Array<{x:number;y:number;width:number;height:number}>>();
   for (const item of redactions) { const list=byPage.get(item.page)||[]; list.push(item); byPage.set(item.page,list); }
