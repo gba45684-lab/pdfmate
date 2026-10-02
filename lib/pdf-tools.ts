@@ -129,6 +129,22 @@ export async function getPdfPageCount(file: File) {
   return src.getPageCount();
 }
 
+export async function cropPages(file: File, margin = 24) {
+  const src = await loadPdf(file);
+  src.getPages().forEach((page) => {
+    const { width, height } = page.getSize();
+    const safe = Math.min(Math.max(margin, 0), Math.min(width, height) / 3);
+    page.setCropBox(safe, safe, Math.max(1, width - safe * 2), Math.max(1, height - safe * 2));
+  });
+  return src.save();
+}
+
+export async function flattenPdf(file: File) {
+  const src = await loadPdf(file);
+  src.getForm().flatten();
+  return src.save();
+}
+
 export async function addSignature(file: File, signatureDataUrl: string, pageSpec = "") {
   const src = await loadPdf(file);
   const targets = parsePages(pageSpec || "1-" + src.getPageCount(), src.getPageCount());
