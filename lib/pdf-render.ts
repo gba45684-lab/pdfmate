@@ -1,10 +1,7 @@
-import { GlobalWorkerOptions, getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-
 export type PdfPagePreview = { index: number; url: string; width: number; height: number };
 
 export async function renderPdfPreviews(file: File, maxPages = 30, scale = 0.55): Promise<PdfPagePreview[]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  GlobalWorkerOptions.workerSrc = "";
   const data = new Uint8Array(await file.arrayBuffer());
   const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
   const previews: PdfPagePreview[] = [];
