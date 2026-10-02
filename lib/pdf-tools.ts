@@ -202,6 +202,31 @@ export async function addSignature(file: File, signatureDataUrl: string, pageSpe
   return src.save();
 }
 
+export async function fillPdfForm(file: File, values: Record<string, string>) {
+  const src = await loadPdf(file);
+  const form = src.getForm();
+  const fields = form.getFields();
+  if (!fields.length) throw new Error("This PDF does not contain fillable form fields.");
+
+  for (const field of fields) {
+    const name = field.getName();
+    const value = values[name];
+    if (typeof value !== "string") continue;
+    if ("setText" in field && typeof field.setText === "function") {
+      field.setText(value);
+    }
+  }
+  return src.save();
+}
+
+export async function getPdfFormFields(file: File) {
+  const src = await loadPdf(file);
+  return src.getForm().getFields().map((field) => ({
+    name: field.getName(),
+    type: field.constructor.name,
+  }));
+}
+
 export type PdfAnnotation =
   | { type: "text"; page: number; x: number; y: number; text: string; size?: number }
   | { type: "highlight"; page: number; x: number; y: number; width: number; height: number }
