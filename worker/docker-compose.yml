@@ -1,0 +1,17 @@
+services:
+  pdfmate-worker:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      PDF_WORKER_TOKEN: ${PDF_WORKER_TOKEN}
+      MAX_FILE_BYTES: ${PDF_WORKER_MAX_FILE_BYTES:-52428800}
+    expose:
+      - "8080"
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
