@@ -15,7 +15,7 @@ export async function renderPdfPreviews(file: File, maxPages = 30, scale = 0.55)
     canvas.height = Math.ceil(viewport.height);
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Your browser could not create a rendering canvas.");
-    await page.render({ canvasContext: context, viewport }).promise;
+    await page.render({ canvasContext: context, viewport, canvas } as any).promise;
     previews.push({ index: i, url: canvas.toDataURL("image/jpeg", 0.78), width: canvas.width, height: canvas.height });
   }
 
@@ -36,7 +36,7 @@ export async function pdfToImages(file: File, format: "png" | "jpeg" = "png", sc
     canvas.height = Math.ceil(viewport.height);
     const context = canvas.getContext("2d");
     if (!context) throw new Error("Your browser could not create a rendering canvas.");
-    await page.render({ canvasContext: context, viewport }).promise;
+    await page.render({ canvasContext: context, viewport, canvas } as any).promise;
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob(
         (value) => value ? resolve(value) : reject(new Error("Could not encode rendered page.")),
