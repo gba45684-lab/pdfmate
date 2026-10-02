@@ -5,12 +5,18 @@ export const runtime = "edge";
 const MAX_BODY_BYTES = 180_000;
 const MAX_MESSAGES = 12;
 const MAX_MESSAGE_CHARS = 60_000;
+const RATE_LIMIT = 20;
+const WINDOW_MS = 60_000;
+const buckets = new Map<string,{count:number;reset:number}>();
 
 export async function POST(request: NextRequest) {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return NextResponse.json({ error: "AI service is not configured." }, { status: 503 });
 
-  try {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const now=Date.now(); const bucket=buckets.get(ip); if(!bucket || now>bucket.reset){buckets.set(ip,{count:1,reset:now+WINDOW_MS});} else {bucket.count++; if(bucket.count>RATE_LIMIT) return NextResponse.json({error:"Rate limit exceeded. Try again shortly."},{status:429});}
+
+    try {
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (contentLength > MAX_BODY_BYTES) return NextResponse.json({ error: "AI request is too large." }, { status: 413 });
 
