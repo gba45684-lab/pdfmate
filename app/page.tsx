@@ -411,7 +411,27 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
            {files.length > 0 && <button type="button" disabled={cloudSaving} onClick={() => saveCloudDocument(files[0]).catch(e => setStatus(e instanceof Error ? e.message : "Cloud save failed."))} className="mt-3 w-full rounded-xl border border-violet-500/30 px-4 py-3 text-sm text-violet-300 disabled:opacity-50">{cloudSaving ? "Saving to cloud…" : "Save original to private cloud"}</button>}
           {active.id === "reorder" && files[0] && <button onClick={() => loadOrganizer(files[0])} className="mt-4 w-full rounded-xl border border-zinc-800 px-4 py-3 text-sm hover:border-violet-500">Preview & arrange pages</button>}
           {active.id === "reorder" && order.length > 0 && <div className="mt-4 grid max-h-72 grid-cols-3 gap-3 overflow-auto rounded-xl border border-zinc-800 bg-zinc-900/60 p-3 sm:grid-cols-4">
-            {order.map((pageNumber) => { const preview = previews.find((item) => item.index === pageNumber); return <div key={pageNumber} draggable onDragStart={() => setDragPage(pageNumber)} onDragOver={(e) => e.preventDefault()} onDrop={() => { if (dragPage !== null) movePage(dragPage, pageNumber); setDragPage(null); }} className="cursor-grab rounded-lg border border-zinc-800 bg-zinc-950 p-2 active:cursor-grabbing"><div className="aspect-[3/4] overflow-hidden rounded bg-white">{preview && <img src={preview.url} alt={"Page " + pageNumber} className="h-full w-full object-contain"/></div><div className="pt-2 text-center text-xs text-zinc-400">Page {pageNumber}</div></div>; })}
+             {order.map((pageNumber) => {
+               const preview = previews.find((item) => item.index === pageNumber);
+               return (
+                 <div
+                   key={pageNumber}
+                   draggable
+                   onDragStart={() => setDragPage(pageNumber)}
+                   onDragOver={(e) => e.preventDefault()}
+                   onDrop={() => {
+                     if (dragPage !== null) movePage(dragPage, pageNumber);
+                     setDragPage(null);
+                   }}
+                   className="cursor-grab rounded-lg border border-zinc-800 bg-zinc-950 p-2 active:cursor-grabbing"
+                 >
+                   <div className="aspect-[3/4] overflow-hidden rounded bg-white">
+                     {preview && <img src={preview.url} alt={"Page " + pageNumber} className="h-full w-full object-contain" />}
+                   </div>
+                   <div className="pt-2 text-center text-xs text-zinc-400">Page {pageNumber}</div>
+                 </div>
+               );
+             })}
           </div>}
           {active.id === "reorder" && order.length > 0 && <button onClick={() => setSpec(order.join(","))} className="mt-3 w-full rounded-xl border border-violet-500/40 px-4 py-2 text-sm text-violet-300">Use this page order</button>}
           {active.needsSpec && <><label className="mt-5 block text-sm text-zinc-400">{active.id === "sign" ? "Pages to sign (blank = every page)" : "Pages"}</label><input value={spec} onChange={e => setSpec(e.target.value)} placeholder="Example: 1,3-5,8" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
