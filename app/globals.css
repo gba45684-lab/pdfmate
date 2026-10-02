@@ -222,3 +222,16 @@ footer{padding-bottom:max(28px,env(safe-area-inset-bottom))}
   html{scroll-behavior:auto}
   *,*:before,*:after{transition:none!important;animation:none!important}
 }
+
+
+/* Visual card + action-menu layer — keeps the standalone-preview information architecture. */
+#tools>div:last-child>button{position:relative;overflow:hidden;background:linear-gradient(180deg,#fff 0%,#fcfcfe 100%)!important;}
+#tools>div:last-child>button::after{content:"⋮";position:absolute;right:10px;top:9px;width:28px;height:28px;display:grid;place-items:center;border-radius:9px;color:#667085;font-size:20px;font-weight:900;background:#f8f9fc;}
+#tools>div:last-child>button:hover::after{background:#f3efff;color:#5b21b6;}
+#tools>div:last-child>button span:first-child{width:42px!important;height:42px!important;border-radius:13px!important;background:linear-gradient(145deg,#ede9fe,#f5f3ff)!important;color:#5b21b6!important;box-shadow:inset 0 0 0 1px #ddd6fe;}
+#tools>div:last-child>button h3{font-size:15px!important;font-weight:800!important;letter-spacing:-.01em;}
+#tools>div:last-child>button p{font-size:12px!important;color:#667085!important;}
+#tools>div:last-child>button:hover{transform:translateY(-3px)!important;box-shadow:0 16px 32px rgba(91,33,182,.12)!important;}
+#tools>div:first-child button[role=tab]{min-height:38px!important;}
+#workflow button{box-shadow:0 8px 20px rgba(124,58,237,.18);}
+@media(max-width:767px){#tools>div:last-child>button{min-height:148px!important;}#tools>div:last-child>button::after{right:8px;top:8px;}}
