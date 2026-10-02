@@ -597,7 +597,6 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
           <p className="mt-3 text-center text-xs text-zinc-600">Browser-supported operations run locally. Password encryption and advanced optimization/conversion use the secure server worker.</p>
           </>}
         </div>
-      </div>
-    </main>
+      </div>}
   );
 }
