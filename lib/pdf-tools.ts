@@ -244,7 +244,8 @@ export type PdfAnnotation =
   | { type: "text"; page: number; x: number; y: number; text: string; size?: number }
   | { type: "highlight"; page: number; x: number; y: number; width: number; height: number }
   | { type: "rect"; page: number; x: number; y: number; width: number; height: number }
-  | { type: "line"; page: number; x1: number; y1: number; x2: number; y2: number }\n  | { type: "whiteout"; page: number; x: number; y: number; width: number; height: number };
+  | { type: "line"; page: number; x1: number; y1: number; x2: number; y2: number }
+  | { type: "whiteout"; page: number; x: number; y: number; width: number; height: number };
 
 export async function annotatePdf(file: File, annotations: PdfAnnotation[]) {
   const src = await loadPdf(file);
@@ -294,12 +295,13 @@ export async function inspectPdf(file: File) {
     formFields,
     portrait,
     landscape,
-    encrypted: false,
     averageWidth: sizes.length ? Math.round(sizes.reduce((sum, s) => sum + s.width, 0) / sizes.length) : 0,
     averageHeight: sizes.length ? Math.round(sizes.reduce((sum, s) => sum + s.height, 0) / sizes.length) : 0,
   };
 }
 
+
+export { parsePages };
 
 export async function redactPages(file: File, redactions: Array<{page:number;x:number;y:number;width:number;height:number}>) {
   const src = await loadPdf(file);
