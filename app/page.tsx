@@ -77,6 +77,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [status, setStatus] = useState("");
   const [redactWidth, setRedactWidth] = useState(180);
   const [redactHeight, setRedactHeight] = useState(40);
+  const [recentTools, setRecentTools] = useState<string[]>([]);
   const [autoReport, setAutoReport] = useState<{pages:number;formFields:number;portrait:number;landscape:number;recommendation:string}|null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
@@ -84,6 +85,10 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [previews, setPreviews] = useState<PdfPagePreview[]>([]);
   const [order, setOrder] = useState<number[]>([]);
   const [dragPage, setDragPage] = useState<number | null>(null);
+
+  useEffect(() => {
+    try { setRecentTools(JSON.parse(localStorage.getItem("pdfmate-recent-tools") || "[]")); } catch {}
+  }, []);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -100,6 +105,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
   }, [active]);
 
   function openTool(tool: Tool) {
+    setRecentTools(prev => { const next=[tool.name,...prev.filter(x=>x!==tool.name)].slice(0,6); try { localStorage.setItem("pdfmate-recent-tools", JSON.stringify(next)); } catch {} return next; });
     setActive(tool); setFiles([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer("");
     setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setPreviews([]); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng");
     requestAnimationFrame(() => input.current?.click());
