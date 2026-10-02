@@ -125,6 +125,32 @@ export async function imagesToPdf(files: File[]) {
 }
 
 
+export type PdfPageSize = "a4" | "letter" | "legal" | "a5";
+
+const PAGE_SIZES: Record<PdfPageSize, [number, number]> = {
+  a4: [595.28, 841.89],
+  letter: [612, 792],
+  legal: [612, 1008],
+  a5: [419.53, 595.28],
+};
+
+export async function resizePdf(file: File, size: PdfPageSize) {
+  const src = await loadPdf(file);
+  const out = await PDFDocument.create();
+  const [targetWidth, targetHeight] = PAGE_SIZES[size];
+  for (const sourcePage of src.getPages()) {
+    const embedded = await out.embedPage(sourcePage);
+    const sourceWidth = Math.max(1, sourcePage.getWidth());
+    const sourceHeight = Math.max(1, sourcePage.getHeight());
+    const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
+    const width = sourceWidth * scale;
+    const height = sourceHeight * scale;
+    const page = out.addPage([targetWidth, targetHeight]);
+    page.drawPage(embedded, { x: (targetWidth - width) / 2, y: (targetHeight - height) / 2, width, height });
+  }
+  return out.save();
+}
+
 export async function getPdfPageCount(file: File) {
   const src = await loadPdf(file);
   return src.getPageCount();
@@ -174,6 +200,7 @@ export async function addSignature(file: File, signatureDataUrl: string, pageSpe
 
   return src.save();
 }
-\nexport async function rotateAllPages(file: File, angle: number) {
+
+export async function rotateAllPages(file: File, angle: number) {
   return rotatePages(file, "", angle);
 }
