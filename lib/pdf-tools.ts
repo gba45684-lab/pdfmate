@@ -258,11 +258,23 @@ export async function annotatePdf(file: File, annotations: PdfAnnotation[]) {
       page.drawRectangle({ x: item.x, y: item.y, width: item.width, height: item.height, color: rgb(1, 0.88, 0.2), opacity: 0.28, borderWidth: 0 });
     } else if (item.type === "rect") {
       page.drawRectangle({ x: item.x, y: item.y, width: item.width, height: item.height, borderColor: rgb(0.25, 0.2, 0.75), borderWidth: 2 });
-    } else {
+    } else if (item.type === "line") {
       page.drawLine({ start: { x: item.x1, y: item.y1 }, end: { x: item.x2, y: item.y2 }, color: rgb(0.08, 0.08, 0.12), thickness: 2 });
+    } else {
+      page.drawRectangle({ x: item.x, y: item.y, width: item.width, height: item.height, color: rgb(1, 1, 1), borderWidth: 0 });
     }
   }
   return src.save();
+}
+
+export async function compressPdf(file: File) {
+  const src = await loadPdf(file);
+  src.setTitle("");
+  src.setAuthor("");
+  src.setSubject("");
+  src.setKeywords([]);
+  src.setProducer("PDFMate");
+  return src.save({ useObjectStreams: true, addDefaultPage: false });
 }
 
 export async function rotateAllPages(file: File, angle: number) {
