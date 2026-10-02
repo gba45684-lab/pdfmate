@@ -26,9 +26,45 @@ main{max-width:1500px;margin:auto;padding:26px 18px 100px}.hero{display:flex;jus
 <section class="panel workflow" id="workflow"><h2>Simple, controlled PDF flow</h2><div class="hint" style="color:#aaa4b7">Privacy-first workflow</div><div class="step"><i>01</i><div><b>Choose a tool</b><small>Merge, split, edit, OCR, sign, compress and more.</small></div></div><div class="step"><i>02</i><div><b>Process in the browser</b><small>Browser-supported operations stay local.</small></div></div><div class="step"><i>03</i><div><b>Download or save privately</b><small>Cloud storage remains opt-in.</small></div></div><a class="new" style="display:inline-block;margin-top:8px" href="/">Use PDFMate</a></section></div>
 </main>
 <nav class="bottom"><a href="#dashboard">Home</a><a href="#tools">Tools</a><a href="#workflow">Workflow</a><a href="/">App</a></nav>
-<script>
-const tools=[["Merge PDF","Combine multiple PDFs"],["Split PDF","Extract any page range"],["Extract Pages","Create a PDF from selected pages"],["Delete Pages","Remove selected pages"],["Rotate PDF","Rotate selected pages"],["Reorder PDF","Set the complete page order"],["Watermark","Add text watermark"],["Page Numbers","Number every page"],["Images to PDF","Combine JPG or PNG images"],["PDF to Images","Render PDF pages"],["Sign PDF","Draw and place a signature"],["Crop PDF","Trim equal margins"],["Flatten PDF","Flatten interactive fields"],["Resize PDF","Fit to A4, Letter, Legal or A5"],["Edit PDF","Add text, highlights and shapes"],["Fill PDF Forms","Fill AcroForm fields"],["OCR PDF","Recognize scanned text"],["Optimize PDF","Secure PDF optimization"],["Office to PDF","Convert Office documents"],["Protect PDF","Password-protect a PDF"],["Redact PDF","Burn redactions into page images"],["Auto PDF Mode","Inspect and suggest a next action"],["AI PDF","Ask questions about PDF text"]];
-const grid=document.getElementById("grid");const render=(arr)=>grid.innerHTML=arr.map((t,i)=>'<a class="tool" href="/"><span class="num">'+String(i+1).padStart(2,"0")+'</span><b>'+t[0]+'</b><small>'+t[1]+'</small></a>').join("");render(tools);
-document.getElementById("q").addEventListener("input",e=>{const q=e.target.value.toLowerCase().trim();render(tools.filter(t=>(t[0]+" "+t[1]).toLowerCase().includes(q)))});
+<style>
+.toolhead{margin-bottom:18px}.back,.ghost{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}.tooltitle{display:flex;gap:15px;align-items:center;margin-top:18px}.bigicon{width:58px;height:58px;border-radius:17px;display:grid;place-items:center;background:#f3efff;color:var(--p);font-size:25px;font-weight:900}.toolgrid{display:grid;grid-template-columns:1.5fr .75fr;gap:18px}.workspace{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.drop{min-height:330px;border:2px dashed #d8ccfa;border-radius:18px;background:#fbfaff;display:grid;place-items:center;align-content:center;text-align:center;padding:25px}.dropicon{width:48px;height:48px;border-radius:14px;background:#eee8ff;color:var(--p);display:grid;place-items:center;font-size:25px;font-weight:900}.drop h2{margin:14px 0 5px}.drop p{color:var(--muted);max-width:340px;line-height:1.5}.preview{min-height:330px;border:1px solid var(--line);border-radius:18px;background:#f8f9fc;display:grid;place-items:center;align-content:center;text-align:center;padding:25px}.preview span,.preview small{color:var(--muted)}.preview strong{font-size:18px;margin:8px 0}.settings h2{margin-top:0}.setting{display:flex;justify-content:space-between;gap:12px;padding:15px 0;border-bottom:1px solid var(--line)}.setting span{color:var(--muted)}.settings .new,.settings .ghost{width:100%;margin-top:14px}.result{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:18px}.result h2{margin:5px 0}.result p{color:var(--muted);line-height:1.5;margin:0}.resultbadge{padding:9px 12px;border-radius:999px;background:#f1f2f5;color:#667085;font-weight:800;white-space:nowrap}.resultbadge.ready{background:#ecfdf3;color:#027a48}
+@media(max-width:900px){.toolgrid,.workspace{grid-template-columns:1fr}.result{align-items:flex-start;flex-direction:column}.drop,.preview{min-height:250px}}
+</style><script>
+const tools=[
+["Merge PDF","Combine multiple PDFs"],["Split PDF","Extract any page range"],["Extract Pages","Create a PDF from selected pages"],["Delete Pages","Remove selected pages"],["Rotate PDF","Rotate selected pages"],["Reorder PDF","Set the complete page order"],["Watermark","Add text watermark"],["Page Numbers","Number every page"],["Images to PDF","Combine JPG or PNG images"],["PDF to Images","Render PDF pages"],["Sign PDF","Draw and place a signature"],["Crop PDF","Trim equal margins"],["Flatten PDF","Flatten interactive fields"],["Resize PDF","Fit to A4, Letter, Legal or A5"],["Edit PDF","Add text, highlights and shapes"],["Fill PDF Forms","Fill AcroForm fields"],["OCR PDF","Recognize scanned text"],["Optimize PDF","Secure PDF optimization"],["Office to PDF","Convert Office documents"],["Protect PDF","Password-protect a PDF"],["Redact PDF","Burn redactions into page images"],["Auto PDF Mode","Inspect and suggest a next action"],["AI PDF","Ask questions about PDF text"]
+];
+
+const icons=["✦","↗","▣","×","↻","☷","◆","#","▧","▤","✎","⌗","□","↔","T","☑","◎","⚙","▥","▰","▮","✧","AI"];
+const app=document.getElementById("dashboard");
+const grid=document.getElementById("grid");
+const homeHTML=app.innerHTML;
+
+function toolCard(t,i){
+ return '<button class="tool" type="button" data-tool="'+i+'"><span class="num">'+icons[i]+'</span><b>'+t[0]+'</b><small>'+t[1]+'</small></button>';
+}
+function render(arr=tools){
+ grid.innerHTML=arr.map((t)=>toolCard(t,tools.indexOf(t))).join("");
+ document.querySelectorAll("[data-tool]").forEach(x=>x.onclick=()=>openTool(+x.dataset.tool));
+}
+function shell(title,desc,icon){
+ app.innerHTML='<section class="toolhead"><button class="back" id="back">← Back</button><div class="tooltitle"><span class="bigicon">'+icon+'</span><div><div class="eyebrow">PDFMate Tool</div><h1>'+title+'</h1><div class="sub">'+desc+'</div></div></div></section>'+
+ '<section class="toolgrid"><div class="panel workspace"><div class="drop" id="drop"><div class="dropicon">↑</div><h2>Choose your PDF</h2><p>Drag & drop files here or select files from your device.</p><button class="start" id="choose">Choose files</button><input id="file" type="file" accept=".pdf,image/*" hidden></div><div class="preview" id="preview"><span>PDF preview</span><strong>Ready for input</strong><small>Your selected pages and processing controls will appear here.</small></div></div><aside class="panel settings"><h2>Tool settings</h2><div class="setting"><span>Input</span><b>PDF / document</b></div><div class="setting"><span>Processing</span><b>Browser-first</b></div><div class="setting"><span>Output</span><b>PDF</b></div><button class="new" id="process">Process PDF</button><button class="ghost" id="reset">Reset</button></aside></section>'+
+ '<section class="panel result" id="result"><div><div class="eyebrow">Result</div><h2>Ready to process</h2><p>Upload a file above to preview the workflow. This standalone screen is interactive and stays inside the preview.</p></div><div class="resultbadge">● Waiting</div></section>';
+ document.getElementById("back").onclick=home;
+ const choose=document.getElementById("choose"), file=document.getElementById("file");
+ choose.onclick=()=>file.click();
+ file.onchange=()=>{if(file.files[0]){document.getElementById("preview").innerHTML='<span>Selected file</span><strong>'+file.files[0].name+'</strong><small>'+Math.max(1,Math.round(file.files[0].size/1024))+' KB · ready for '+title+'</small>';document.getElementById("result").innerHTML='<div><div class="eyebrow">Result</div><h2>File loaded</h2><p>'+file.files[0].name+' is ready. Choose Process PDF to simulate the result state.</p></div><div class="resultbadge ready">● Ready</div>';}};
+ document.getElementById("process").onclick=()=>{document.getElementById("result").innerHTML='<div><div class="eyebrow">Result</div><h2>'+title+' complete</h2><p>Standalone preview result state. In the full PDFMate app, the selected operation continues with the real PDF processor.</p></div><button class="new" onclick="home()">Back to tools</button>';};
+ document.getElementById("reset").onclick=()=>openTool(current);
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+let current=0;
+function openTool(i){current=i;const t=tools[i];shell(t[0],t[1],icons[i]);}
+function home(){app.innerHTML=homeHTML;render();bindHome();window.scrollTo({top:0,behavior:"smooth"});}
+function bindHome(){
+ document.getElementById("q").oninput=e=>{const q=e.target.value.toLowerCase().trim();render(tools.filter(t=>(t[0]+" "+t[1]).toLowerCase().includes(q)));};
+ document.querySelectorAll(".start").forEach(x=>x.onclick=()=>openTool(0));
+ document.querySelector(".new").onclick=()=>openTool(0);
+}
+render();bindHome();
 </script>
-</body></html>
