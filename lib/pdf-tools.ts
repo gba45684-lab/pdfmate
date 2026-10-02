@@ -8,7 +8,8 @@ export type PdfAction =
   | "reorder"
   | "watermark"
   | "pagenumbers"
-  | "images";
+  | "images"
+  | "resize";
 
 export async function loadPdf(file: File) {
   return PDFDocument.load(await file.arrayBuffer());
