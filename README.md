@@ -73,3 +73,6 @@ These patterns were informed by public open-source PDF projects including ClawPD
 Configure the Supabase project and private `documents` bucket before enabling cloud uploads.
 
 - Optional cloud history panel backed by Supabase-authenticated document metadata
+
+### Server worker
+The `worker/` directory contains the isolated qpdf/LibreOffice production worker for password encryption, optimization and Office-to-PDF conversion. Deploy separately and keep it private.
