@@ -328,7 +328,7 @@ export async function secureRedactPdf(file: File, redactions: Array<{page:number
     const sourcePage=await pdf.getPage(i); const viewport=sourcePage.getViewport({scale:1.5});
     const canvas=document.createElement("canvas"); canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
     const context=canvas.getContext("2d"); if(!context) throw new Error("Could not create redaction canvas.");
-    await sourcePage.render({canvasContext:context,viewport}).promise;
+    await sourcePage.render({canvasContext:context,viewport,canvas} as any).promise;
     for(const item of byPage.get(i-1)||[]) {
       context.fillStyle="#000000";
       context.fillRect(item.x*1.5, canvas.height-(item.y+item.height)*1.5, item.width*1.5, item.height*1.5);
