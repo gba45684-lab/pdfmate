@@ -53,6 +53,8 @@ Production checks:
 
 ## Modern workspace additions
 
+- **Auto PDF Mode** inspects page count, orientation, form fields and selectable text locally, then recommends OCR, form filling, optimization or editing.
+
 - Offline-ready PWA shell with a web manifest and service worker.
 - Local PDF optimization using object streams and metadata cleanup when beneficial.
 - Visual click-to-place PDF annotations.
