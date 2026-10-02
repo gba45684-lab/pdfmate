@@ -111,7 +111,23 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   useEffect(() => {
     loadCloudDocs();
-    if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then((registration) => {
+        registration.update().catch(() => {});
+        if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        registration.addEventListener("updatefound", () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              worker.postMessage({ type: "SKIP_WAITING" });
+            }
+          });
+        });
+      }).catch(() => {});
+      const onControllerChange = () => window.location.reload();
+      navigator.serviceWorker.addEventListener("controllerchange", onControllerChange, { once: true });
+    }
   }, []);
 
   useEffect(() => {
