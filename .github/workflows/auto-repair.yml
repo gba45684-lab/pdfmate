@@ -21,6 +21,15 @@ jobs:
       - run: npm install
       - name: Auto-fix ESLint issues
         run: npx eslint . --fix
+      - name: Repair known generated-source syntax issues
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("app/page.tsx")
+          s=p.read_text()
+          s=s.replace(r"\\n        case \"resize\":", "\n        case \"resize\":")
+          p.write_text(s)
+          PY
       - name: Verify
         run: |
           npm run lint
