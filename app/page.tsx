@@ -4,19 +4,20 @@ import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, reorderPages, resizePdf, rotatePages
+  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, redactPages, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 import { ocrPdf } from "../lib/pdf-ocr";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress"|"auto"|"redact";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
 };
 
 const tools: Tool[] = [
+  { id:"redact", name:"Redact PDF", description:"Place permanent black redaction blocks over sensitive page areas.", accept:".pdf,application/pdf", available:true, action:"redact" },
   { id:"auto", name:"Auto PDF Mode", description:"Inspect your PDF and choose the most useful next action automatically.", accept:".pdf,application/pdf", available:true, action:"auto" },
   { id:"merge", name:"Merge PDF", description:"Combine multiple PDFs in the order you choose.", accept:".pdf,application/pdf", available:true, action:"merge" },
   { id:"split", name:"Split PDF", description:"Extract any page range into a new PDF.", accept:".pdf,application/pdf", needsSpec:true, available:true, action:"extract" },
@@ -74,6 +75,8 @@ export default function Home() {
 const [ocrLanguage, setOcrLanguage] = useState("eng");
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [redactWidth, setRedactWidth] = useState(180);
+  const [redactHeight, setRedactHeight] = useState(40);
   const [autoReport, setAutoReport] = useState<{pages:number;formFields:number;portrait:number;landscape:number;recommendation:string}|null>(null);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiAnswer, setAiAnswer] = useState("");
@@ -155,6 +158,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
     if (!active || !active.available || !files.length) return;
     setBusy(true); setStatus(active.id === "ai" ? "Reading PDF text locally…" : "Processing locally…");
     try {
+      if (active.action === "redact") {
+        if (editPage < 1) throw new Error("Enter a valid page number.");
+        const bytes = await redactPages(files[0], [{page: editPage - 1, x: editX, y: editY, width: redactWidth, height: redactHeight}]);
+        downloadPdf(bytes, "pdfmate-redacted.pdf");
+        setStatus("Redacted PDF created locally.");
+        return;
+      }
       if (active.action === "auto") {
         const info = await inspectPdf(files[0]);
         const extracted = await extractPdfText(files[0], Math.min(info.pages, 5), 12000);
@@ -325,7 +335,13 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
           {active.needsSpec && <><label className="mt-5 block text-sm text-zinc-400">{active.id === "sign" ? "Pages to sign (blank = every page)" : "Pages"}</label><input value={spec} onChange={e => setSpec(e.target.value)} placeholder="Example: 1,3-5,8" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "crop" && <><label className="mt-5 block text-sm text-zinc-400">Margin to remove (points)</label><input value={spec} onChange={e => setSpec(e.target.value)} inputMode="numeric" placeholder="24" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           {active.id === "rotate" && <><label className="mt-5 block text-sm text-zinc-400">Rotation</label><select value={angle} onChange={e => setAngle(Number(e.target.value))} className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></>}
-          {active.action === "auto" && <div className="mt-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+          {active.action === "redact" && <div className="mt-5 space-y-3 rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
+  <p className="text-sm text-zinc-400">Place a black redaction block over sensitive content. The selected area is drawn into the exported PDF.</p>
+  <div className="grid grid-cols-2 gap-3"><input type="number" value={editPage} onChange={e=>setEditPage(Number(e.target.value)||1)} placeholder="Page" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={editX} onChange={e=>setEditX(Number(e.target.value)||0)} placeholder="X" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/></div>
+  <div className="grid grid-cols-3 gap-3"><input type="number" value={editY} onChange={e=>setEditY(Number(e.target.value)||0)} placeholder="Y" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={redactWidth} onChange={e=>setRedactWidth(Number(e.target.value)||1)} placeholder="Width" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/><input type="number" value={redactHeight} onChange={e=>setRedactHeight(Number(e.target.value)||1)} placeholder="Height" className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3"/></div>
+  <p className="text-xs text-red-300">Use the visual editor coordinates or PDF-point measurements. Verify the exported PDF before sharing.</p>
+</div>}
+{active.action === "auto" && <div className="mt-5 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
   <p className="text-sm text-zinc-400">Auto Mode inspects the document locally and recommends the next PDF operation.</p>
   {autoReport && <div className="mt-4 grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3"><div className="text-zinc-500">Pages</div><div className="mt-1 text-lg font-semibold">{autoReport.pages}</div></div>
