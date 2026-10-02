@@ -38,7 +38,7 @@ button:active{transform:translateY(1px)}
 .text-violet-500{color:var(--pm-primary-2)!important}
 .border-violet-500{border-color:#7c3aed!important}
 .bg-violet-50{background:#f5f0ff!important}
-.hover\\:bg-violet-50:hover{background:#f5f0ff!important}
+
 .shadow-violet-200{--tw-shadow-color:#ddd6fe!important}
 .ring-violet-100{--tw-ring-color:#ede9fe!important}
 
