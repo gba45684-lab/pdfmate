@@ -187,6 +187,12 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         setStatus("Redacted PDF created locally.");
         return;
       }
+      if (active.action === "compress") {
+        const form=new FormData(); form.append("file",files[0]); form.append("action","compress");
+        const response=await fetch("/api/pdf/worker",{method:"POST",body:form});
+        if(!response.ok){const data=await response.json().catch(()=>null);throw new Error(data?.error||"Secure optimization failed.");}
+        downloadBlob(await response.blob(),"pdfmate-optimized.pdf"); setStatus("Optimized PDF downloaded."); return;
+      }
       if (active.action === "protect") {
         if (!protectPassword || protectPassword.length < 8) throw new Error("Use a password of at least 8 characters.");
         const form = new FormData();
@@ -412,7 +418,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
           {active.needsText && <><label className="mt-5 block text-sm text-zinc-400">Watermark text</label><input value={text} onChange={e => setText(e.target.value)} placeholder="CONFIDENTIAL" className="mt-2 w-full rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 outline-none focus:border-violet-500"/></>}
           <button disabled={!files.length || busy} onClick={run} className="mt-6 w-full rounded-xl bg-violet-500 px-5 py-3 font-semibold disabled:opacity-40">{busy ? "Processing…" : active.id === "ai" ? "Ask PDF" : "Process & download"}</button>
           {status && <p className="mt-4 text-center text-sm text-zinc-400">{status}</p>}
-          <p className="mt-5 text-center text-xs text-zinc-600">Browser-supported operations run locally. Encryption, OCR, compression and advanced conversion will use the secure server pipeline.</p>
+          <p className="mt-5 text-center text-xs text-zinc-600">Browser-supported operations run locally. Password encryption and advanced optimization/conversion use the secure server worker.</p>
         </div>
       </div>}
     </main>
