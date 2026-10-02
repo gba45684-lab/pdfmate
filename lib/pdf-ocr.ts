@@ -1,12 +1,12 @@
 export type OcrPage = { page: number; text: string };
 
-export async function ocrPdf(file: File, maxPages = 20, onProgress?: (value: number) => void): Promise<OcrPage[]> {
+export async function ocrPdf(file: File, maxPages = 20, onProgress?: (value: number) => void, language = "eng"): Promise<OcrPage[]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const { createWorker } = await import("tesseract.js");
   const data = new Uint8Array(await file.arrayBuffer());
   const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
   const count = Math.min(pdf.numPages, maxPages);
-  const worker = await createWorker("eng");
+  const worker = await createWorker(language);
   const results: OcrPage[] = [];
 
   try {
