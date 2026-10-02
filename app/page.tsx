@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, redactPages, secureRedactPdf, reorderPages, resizePdf, rotatePages
+  annotatePdf, fillPdfForm, getPdfFormFields, inspectPdf, mergePdfs, secureRedactPdf, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
@@ -42,17 +42,6 @@ const tools: Tool[] = [
   { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:true, action:"protect" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
 ];
-
-function downloadPdf(bytes: Uint8Array, name: string) {
-  const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
-  downloadBlob(blob, name);
-}
-function downloadBlob(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = name; a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
 
 export default function Home() {
   const input = useRef<HTMLInputElement>(null);
@@ -177,12 +166,12 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
 
   function openTool(tool: Tool) {
     setRecentTools(prev => { const next=[tool.name,...prev.filter(x=>x!==tool.name)].slice(0,6); try { localStorage.setItem("pdfmate-recent-tools", JSON.stringify(next)); } catch {} return next; });
-    setActive(tool); setFiles([]); setPreviews([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer(""); setResult(null); setResultUrl(""); setBusy(false);
+    if(resultUrl) URL.revokeObjectURL(resultUrl); setActive(tool); setFiles([]); setPreviews([]); setSpec(""); setText(""); setStatus(""); setAiPrompt(""); setAiAnswer(""); setResult(null); setResultUrl(""); setBusy(false);
     setSignatureReady(false); setAutoReport(null); setRedactWidth(180); setRedactHeight(40); setOrder([]); setDragPage(null); setEditPage(1); setEditText(""); setEditType("text"); setEditX(48); setEditY(72); setEditW(180); setEditH(40); setFormFields([]); setFormValues({}); setOcrText(""); setOcrProgress(0); setOcrLanguage("eng"); setOcrSearchable(true); setProtectPassword("");
     requestAnimationFrame(() => { if (input.current) { input.current.value = ""; input.current.click(); } });
   }
 
-  function closeTool() { setActive(null); setFiles([]); setPreviews([]); setResult(null); setResultUrl(""); setStatus(""); setBusy(false); }
+  function closeTool() { if(resultUrl) URL.revokeObjectURL(resultUrl); setActive(null); setFiles([]); setPreviews([]); setResult(null); setResultUrl(""); setStatus(""); setBusy(false); }
   function deliverBlob(blob: Blob, name: string) { const url=URL.createObjectURL(blob); setResultUrl(url); setResult({name,blob,preview:blob.type==="application/pdf"||name.toLowerCase().endsWith(".pdf")}); setStatus("Result ready — review it, then download when you are ready."); }
   function deliverPdf(bytes: Uint8Array, name: string) { deliverBlob(new Blob([bytes as BlobPart], {type:"application/pdf"}), name); }
   function handleFiles(event: React.ChangeEvent<HTMLInputElement>) {
@@ -275,7 +264,7 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         const response = await fetch("/api/pdf/protect", { method:"POST", body: form });
         if (!response.ok) { const data=await response.json().catch(()=>null); throw new Error(data?.error || "Secure PDF protection failed."); }
         const protectedPdf = await response.blob();
-        downloadBlob(protectedPdf, "pdfmate-protected.pdf");
+        deliverBlob(protectedPdf, "pdfmate-protected.pdf");
         setStatus("Protected PDF downloaded.");
         return;
       }
