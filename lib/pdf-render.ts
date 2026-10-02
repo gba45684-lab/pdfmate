@@ -3,7 +3,7 @@ export type PdfPagePreview = { index: number; url: string; width: number; height
 export async function renderPdfPreviews(file: File, maxPages = 30, scale = 0.55): Promise<PdfPagePreview[]> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const data = new Uint8Array(await file.arrayBuffer());
-  const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
+  const pdf = await pdfjs.getDocument({ data, disableWorker: true } as any).promise;
   const previews: PdfPagePreview[] = [];
   const count = Math.min(pdf.numPages, maxPages);
 
@@ -25,7 +25,7 @@ export async function renderPdfPreviews(file: File, maxPages = 30, scale = 0.55)
 export async function pdfToImages(file: File, format: "png" | "jpeg" = "png", scale = 1.5) {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const data = new Uint8Array(await file.arrayBuffer());
-  const pdf = await pdfjs.getDocument({ data, disableWorker: true }).promise;
+  const pdf = await pdfjs.getDocument({ data, disableWorker: true } as any).promise;
   const images: { name: string; blob: Blob }[] = [];
 
   for (let i = 1; i <= pdf.numPages; i++) {
