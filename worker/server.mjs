@@ -26,9 +26,6 @@ async function parse(req){
     req.pipe(bb);
   });
 }
-async function runQpdf(input,output,password){
-  await exec("qpdf",["--encrypt","",password,"256","--",input,output,"--replace-input"],{maxBuffer:1024*1024});
-}
 async function main(req,res){
   if(req.method!=="POST")return send(res,405,"text/plain","Method Not Allowed");
   if(TOKEN && req.headers.authorization!=="Bearer "+TOKEN)return send(res,401,"application/json",JSON.stringify({error:"Unauthorized"}));
