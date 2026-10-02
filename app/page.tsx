@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import JSZip from "jszip";
 import {
   addPageNumbers, addSignature, addWatermark, cropPages, deletePages, extractPages, flattenPdf, imagesToPdf,
-  annotatePdf, fillPdfForm, getPdfFormFields, mergePdfs, reorderPages, resizePdf, rotatePages
+  annotatePdf, compressPdf, fillPdfForm, getPdfFormFields, mergePdfs, reorderPages, resizePdf, rotatePages
 } from "../lib/pdf-tools";
 import { pdfToImages, renderPdfPreviews, type PdfPagePreview } from "../lib/pdf-render";
 import { extractPdfText } from "../lib/pdf-ai";
 import { ocrPdf } from "../lib/pdf-ocr";
 
-type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr";
+type Action = "merge"|"extract"|"delete"|"rotate"|"reorder"|"watermark"|"pagenumbers"|"images"|"pdfimages"|"sign"|"crop"|"flatten"|"resize"|"edit"|"forms"|"ocr"|"compress";
 type Tool = {
   id: string; name: string; description: string; accept: string; available: boolean;
   needsSpec?: boolean; needsText?: boolean; action: Action;
@@ -34,7 +34,7 @@ const tools: Tool[] = [
   { id:"edit", name:"Edit PDF", description:"Add text, highlights, boxes and lines to PDF pages.", accept:".pdf,application/pdf", available:true, action:"edit" },
   { id:"forms", name:"Fill PDF Forms", description:"Detect and fill standard AcroForm text fields locally.", accept:".pdf,application/pdf", available:true, action:"forms" },
   { id:"ocr", name:"OCR PDF", description:"Recognize text in scanned PDF pages locally.", accept:".pdf,application/pdf", available:true, action:"ocr" },
-  { id:"compress", name:"Compress PDF", description:"Server-side optimization pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
+  { id:"compress", name:"Optimize PDF", description:"Reduce PDF overhead and metadata locally when possible.", accept:".pdf,application/pdf", available:true, action:"compress" },
   { id:"protect", name:"Protect PDF", description:"Password encryption will use the secure server pipeline.", accept:".pdf,application/pdf", available:false, action:"merge" },
   { id:"ai", name:"AI PDF", description:"Ask questions about selectable text in your PDF.", accept:".pdf,application/pdf", available:true, action:"merge" },
 ];
@@ -161,6 +161,12 @@ const [ocrLanguage, setOcrLanguage] = useState("eng");
         const data = await response.json();
         if (!response.ok) throw new Error(data?.error || "AI request failed.");
         setAiAnswer(data.text || "No answer returned."); setStatus("AI answer ready."); return;
+      }
+      if (active.action === "compress") {
+        const bytes = await compressPdf(files[0]);
+        downloadPdf(bytes, "pdfmate-optimized.pdf");
+        setStatus("Optimized PDF created locally. Size reduction depends on the source PDF.");
+        return;
       }
       if (active.action === "pdfimages") {
         const images = await pdfToImages(files[0], imageFormat);
