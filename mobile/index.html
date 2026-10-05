@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#5b21b6">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>PDFMate — PDF tools, without the busywork</title>
+<style>
+:root{color-scheme:light;--p:#5b21b6;--p2:#7c3aed;--gold:#f2b544;--ink:#172033;--muted:#667085;--line:#e7e9ef;--card:#fff;--bg:#f6f7fb;--tint:#f5f0ff;--r:16px;--ease:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+a{color:inherit;text-decoration:none}
+svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid var(--p2);outline-offset:2px;border-radius:10px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--p)}
+.shell{display:flex;min-height:100vh}
+/* sidebar */
+aside{display:none;width:250px;flex:none;background:#fff;border-right:1px solid var(--line);box-shadow:8px 0 30px rgba(16,24,40,.025);position:sticky;top:0;height:100vh;flex-direction:column}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:40px;height:40px;border-radius:12px;background:var(--p);color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:0 8px 18px rgba(124,58,237,.28)}
+.brand b{display:block;font-size:18px;font-weight:800;letter-spacing:-.02em}.brand b i{font-style:normal;color:var(--p)}
+.brand small{display:block;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#667085}
+aside .brand{height:80px;padding:0 24px;border-bottom:1px solid #f1f2f6}
+aside nav{flex:1;padding:16px;display:grid;align-content:start;gap:4px;font-weight:600}
+.nl{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:12px;color:#475467;transition:background .2s,color .2s}
+.nl:hover{background:#f8f9fc}.nl[aria-current=true]{background:var(--tint);color:var(--p)}
+.sec{padding:20px 16px 8px;font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#667085}
+.priv{margin:16px;padding:16px;border-radius:16px;color:#fff;background:linear-gradient(145deg,#21113f,#120d20)}
+.priv p{margin:4px 0 12px;font-size:11px;color:#98a2b3}.priv a{font-size:12px;font-weight:700;color:#d8b4fe}
+main{flex:1;min-width:0}
+/* header */
+header{position:sticky;top:0;z-index:30;height:68px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);box-shadow:0 6px 18px rgba(16,24,40,.045);padding-top:env(safe-area-inset-top,0)}
+header .brand .logo{width:36px;height:36px;font-size:12px}header .brand b{font-size:15px}header .brand small{display:none}
+.search{position:relative;flex:1;max-width:560px;display:none}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#667085;pointer-events:none}
+.search input,.m-search input{width:100%;height:44px;border:1px solid var(--line);background:#f8f9fc;border-radius:12px;padding:0 54px 0 44px;outline:0;transition:border-color .2s,box-shadow .2s,background .2s}
+.search input:focus,.m-search input:focus{border-color:#8b5cf6;background:#fff;box-shadow:0 0 0 4px rgba(124,58,237,.10)}
+kbd{position:absolute;right:12px;top:50%;transform:translateY(-50%);font:600 11px ui-monospace,monospace;color:#667085;border:1px solid var(--line);border-radius:6px;padding:1px 7px;background:#fff}
+.m-search{position:relative;margin-top:16px}.m-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#667085}.m-search input{padding-right:16px}
+.hdr-r{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;font-weight:700;min-height:44px;padding:0 18px}
+.btn.pri{position:relative;overflow:hidden;color:#fff;background:var(--p);box-shadow:0 10px 22px rgba(124,58,237,.28);transition:transform .2s var(--ease),box-shadow .2s}
+.btn.pri:hover{transform:translateY(-1px);box-shadow:0 14px 28px rgba(124,58,237,.34)}.btn.pri:active{transform:translateY(1px)}
+.btn.pri:after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);transform:translateX(-120%);animation:shine 4.5s 1.5s infinite}
+@keyframes shine{to{transform:translateX(120%)}}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:#344054}.btn.ghost:hover{background:#f8f9fc}
+.hide-s{display:none}
+/* content */
+.wrap{max-width:1500px;margin:0 auto;padding:20px 16px 112px}
+.hero{position:relative;display:flex;flex-direction:column;gap:20px}
+.hero:after{content:"";position:absolute;right:-20px;top:-18px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#ede9fe,rgba(237,233,254,0) 70%);pointer-events:none;z-index:-1}
+h1{margin:8px 0 0;font-size:26px;line-height:1.15;font-weight:800;letter-spacing:-.025em}
+.lead{margin:8px 0 0;max-width:620px;color:#667085;line-height:1.6}
+.grid{display:grid;gap:12px}
+.stats{grid-template-columns:repeat(2,1fr);margin-top:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 1px 2px rgba(16,24,40,.03),0 10px 30px rgba(16,24,40,.035)}
+.spot{position:relative;overflow:hidden;transition:box-shadow .25s,border-color .25s,transform .25s var(--ease)}
+.spot:before{content:"";position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .3s;background:radial-gradient(240px circle at var(--x,50%) var(--y,50%),rgba(124,58,237,.10),transparent 70%)}
+.spot:hover:before{opacity:1}
+.stat{padding:16px}.stat .t{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;letter-spacing:.04em;color:#667085;text-transform:uppercase}
+.ico{display:grid;place-items:center;width:36px;height:36px;border-radius:10px}
+.v{margin-top:12px;font-size:26px;font-weight:800;letter-spacing:-.02em}.v.sm{font-size:20px;padding:4px 0}
+.stat small{display:block;margin-top:4px;color:#667085;font-size:12px}
+.two{margin-top:20px;grid-template-columns:1fr}
+.panel{padding:16px}
+.ph{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px}
+h2{margin:0;font-size:18px;font-weight:700}.ph p{margin:4px 0 0;font-size:12px;color:#667085}
+.link{font-size:12px;font-weight:700;color:var(--p)}
+.qa{margin-top:16px;grid-template-columns:repeat(2,1fr);gap:10px}
+.qb{display:flex;align-items:center;gap:12px;text-align:left;padding:14px;background:#fff;border:1px solid var(--line);border-radius:12px;min-height:64px;min-width:0;transition:transform .25s var(--ease),border-color .2s,background .2s}
+.qb:hover{transform:translateY(-2px);border-color:#ddd6fe;background:rgba(245,240,255,.5)}
+.qb .ic{width:40px;height:40px;border-radius:12px;background:#f2f4f7;color:var(--p);display:grid;place-items:center;flex:none;transition:background .2s}.qb:hover .ic{background:#ede9fe}
+.qb span{min-width:0}.qb b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qb em{display:block;font-style:normal;font-size:11px;color:#667085;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fav{margin-top:16px;display:grid;gap:8px}
+.fb{display:flex;justify-content:space-between;align-items:center;width:100%;padding:12px 16px;border:0;border-radius:12px;background:#f8f9fc;font-weight:600;text-align:left;min-height:44px;transition:background .2s}
+.fb:hover{background:var(--tint)}.fb svg{color:#8b5cf6}
+.empty{border:1px dashed var(--line);border-radius:12px;padding:20px;text-align:center;font-size:12px;color:#667085}
+/* tools */
+#tools{margin-top:20px}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:16px -4px 0;padding:4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:0 14px;min-height:36px;font-size:12px;font-weight:700;color:#475467;white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+.chip[aria-selected=true]{background:var(--p);border-color:var(--p);color:#fff}
+.tools{margin-top:16px;grid-template-columns:repeat(2,1fr);gap:10px}
+.tool{display:block;width:100%;text-align:left;padding:16px;min-height:142px;background:#fff;border:1px solid var(--line);border-radius:12px}
+.tool:hover{transform:translateY(-2px);border-color:#ddd6fe;box-shadow:0 10px 28px rgba(91,33,182,.10)}
+.tool .row{display:flex;justify-content:space-between;align-items:flex-start}
+.tool .ic{width:40px;height:40px;border-radius:12px;background:#f5f0ff;color:var(--p);display:grid;place-items:center}
+.tool .go{color:#d0d5dd;margin-top:8px;transition:color .2s,transform .25s var(--ease)}.tool:hover .go{color:#8b5cf6;transform:translateX(3px)}
+.tool h3{margin:16px 0 0;font-size:14px;font-weight:700;line-height:1.25}
+.tool p{margin:4px 0 0;font-size:12px;line-height:1.5;color:#667085;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.count{background:#f2f4f7;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;color:#667085}
+.none{grid-column:1/-1}
+/* cloud + workflow */
+#cloud{margin-top:20px;grid-template-columns:1fr}
+#workflow{border-radius:var(--r);padding:20px;color:#fff;background:linear-gradient(135deg,#24123f,#100c1b 68%,#18111f);box-shadow:0 14px 34px rgba(32,16,54,.14)}
+#workflow .eyebrow{color:#d8b4fe}#workflow h2{margin-top:8px;font-size:20px}
+.step{display:flex;gap:16px;margin-top:20px}.step i{width:36px;height:36px;border-radius:50%;background:rgba(139,92,246,.2);color:#d8b4fe;font:700 12px/36px Inter,sans-serif;text-align:center;font-style:normal;flex:none}
+.step b{display:block;font-size:14px}.step span{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:#98a2b3}
+/* mobile nav */
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px 8px max(8px,env(safe-area-inset-bottom));background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(16,24,40,.08)}
+.bnav div{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;max-width:448px;margin:0 auto}
+.bnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:48px;border-radius:12px;font-size:10px;font-weight:700;color:#667085}
+.bnav a[aria-current=true]{color:var(--p);background:var(--tint)}
+footer{border-top:1px solid var(--line);background:#fff;padding:28px 16px 112px;text-align:center;font-size:12px;color:#667085}
+/* motion */
+.rv{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease);transition-delay:calc(var(--i,0)*45ms)}
+.rv.in{opacity:1;transform:none}
+@media(min-width:640px){.hide-s{display:inline-flex}.wrap{padding:28px 20px 112px}h1{font-size:30px}.stat,.panel{padding:20px}.hero{flex-direction:row;align-items:flex-end;justify-content:space-between}.hero:after{width:180px;height:180px;right:4%;top:-28px}.btn.add{width:auto;padding:0 18px}.btn.add span{display:inline}}
+@media(min-width:768px){header{height:80px;padding-left:32px;padding-right:32px;padding-top:env(safe-area-inset-top,0)}.search{display:block}.m-search{display:none}.wrap{padding:36px 32px 112px}h1{font-size:36px}header .brand small{display:block}.tools{gap:12px}.qa{gap:12px}.stat .v{font-size:30px}}
+@media(min-width:1024px){aside{display:flex}.bnav{display:none}header .brand{display:none}header{padding-left:32px}.wrap,footer{padding-bottom:36px}footer{padding-bottom:28px}.qa{grid-template-columns:repeat(3,1fr)}.tools{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:1280px){.stats{grid-template-columns:repeat(4,1fr);gap:16px}.two{grid-template-columns:1.55fr .9fr;gap:24px}.tools{grid-template-columns:repeat(4,1fr)}#cloud{grid-template-columns:1.2fr .8fr;gap:24px}}
+@media(max-width:374px){.tool{min-height:132px}.tool p{display:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}.rv{opacity:1;transform:none}}
+[hidden]{display:none!important}
+.narrow{max-width:760px;margin:0 auto}.mut{color:#667085;font-size:13px}
+.back{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;border:0;background:none;font-weight:700;font-size:13px;color:var(--p)}
+.steps{display:flex;gap:6px;margin:18px 0 16px}.steps i{flex:1;height:4px;border-radius:4px;background:#e4e7ec;transition:background .3s}.steps i.on{background:var(--p2)}
+.drop{display:grid;place-items:center;gap:6px;text-align:center;padding:44px 16px;border:2px dashed #d0d5dd;border-radius:16px;background:#fff;cursor:pointer;transition:border-color .2s,background .2s}
+.drop:hover,.drop.over{border-color:var(--p2);background:var(--tint)}.drop svg{width:34px;height:34px;color:var(--p2)}
+.file{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.file>span:nth-child(2){flex:1;min-width:0}.file b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.ib{width:44px;height:44px;border:0;background:none;border-radius:10px;color:#667085;display:grid;place-items:center}.ib:hover{background:#f2f4f7}.ib:disabled{opacity:.3}
+.fld{display:grid;gap:6px;margin-top:14px}.fld label{font-weight:700;font-size:13px}
+.fld input,.fld select{height:44px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;outline:0}.fld input:focus,.fld select:focus{border-color:#8b5cf6;box-shadow:0 0 0 4px rgba(124,58,237,.10)}
+.bar{height:8px;border-radius:8px;background:#eef0f4;overflow:hidden;margin-top:16px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--p),var(--p2));transition:width .25s}
+.row2{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.btn[disabled]{opacity:.45;pointer-events:none}
+.note{padding:12px 14px;border-radius:12px;background:#fffaeb;border:1px solid #fedf89;color:#7a4b00;font-size:13px}.note.err{background:#fef3f2;border-color:#fecdca;color:#b42318}
+.okc{width:56px;height:56px;border-radius:50%;background:#ecfdf3;color:#039855;display:grid;place-items:center;margin:0 auto 12px}.okc svg{width:28px;height:28px}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line);margin-top:14px}.srow b{display:block;font-size:14px}.srow:first-of-type{margin-top:16px}
+.sw{width:48px;height:28px;flex:none;border-radius:99px;border:0;background:#d0d5dd;position:relative;transition:background .2s}.sw i{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}.sw[aria-checked=true]{background:var(--p2)}.sw[aria-checked=true] i{transform:translateX(20px)}
+.toast,.off{position:fixed;left:50%;transform:translateX(-50%);z-index:70;max-width:calc(100vw - 32px);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 10px 30px rgba(16,24,40,.2)}
+.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px));background:#101828;color:#fff}.off{top:calc(env(safe-area-inset-top,0px) + 76px);background:#fffaeb;color:#7a4b00;border:1px solid #fedf89}
+.ob{position:fixed;inset:0;z-index:80;display:grid;place-items:end center;background:rgba(16,12,27,.62);padding:0}
+.obc{width:100%;max-width:440px;background:#fff;border-radius:24px 24px 0 0;padding:28px 24px calc(24px + env(safe-area-inset-bottom,0px));text-align:center}
+.obc .okc{background:var(--tint);color:var(--p)}.obc h2{font-size:22px}.obc p{color:#667085;margin:8px 0 0}
+.dots{display:flex;justify-content:center;gap:6px;margin:20px 0}.dots i{width:8px;height:8px;border-radius:50%;background:#d0d5dd}.dots i.on{background:var(--p2);width:22px;border-radius:8px}
+@media(min-width:640px){.ob{place-items:center}.obc{border-radius:24px}}
+html[data-rm] *,html[data-rm] *:before,html[data-rm] *:after{transition:none!important;animation:none!important}html[data-rm] .rv{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside aria-label="Sidebar">
+  <div class="brand"><div class="logo">P</div><div><b>PDF<i>Mate</i></b><small>Workspace</small></div></div>
+  <nav>
+    <a class="nl" href="#dashboard" data-nav="dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+    <a class="nl" href="#tools" data-nav="tools"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>PDF Tools</a>
+    <a class="nl" href="#/files" data-nav="files"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>My Documents</a>
+    <a class="nl" href="#favourites"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg>Favourites</a>
+    <div class="sec">Workspace</div>
+    <a class="nl" href="#tools" data-open="ai"><svg viewBox="0 0 24 24"><path d="m12 3 1.5 6.5L20 11l-6.5 1.5L12 19l-1.5-6.5L4 11l6.5-1.5z"/></svg>AI PDF</a>
+    <a class="nl" href="#/account" data-nav="account" data-account><svg viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg>Account &amp; Cloud</a>
+  </nav>
+  <div class="priv"><b style="font-size:12px">Private by default</b><p>Browser-first processing. Cloud storage is optional.</p><a href="#privacy">Privacy details →</a></div>
+</aside>
+
+<main>
+<header>
+  <div class="brand"><div class="logo">P</div><div><b>PDF<i>Mate</i></b><small>Workspace</small></div></div>
+  <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="q" type="search" autocomplete="off" aria-label="Search PDF tools" placeholder="Search tools, reports or actions…"><kbd aria-hidden="true">/</kbd></div>
+  <div class="hdr-r">
+    <button class="btn pri" data-open="auto" aria-label="Create new PDF"><span aria-hidden="true">+</span><span class="hide-s">New PDF</span></button>
+    <a class="btn ghost hide-s" href="#" data-account>Sign in</a>
+  </div>
+</header>
+
+<div class="wrap" id="dashboard">
+  <div class="hero rv">
+    <div>
+      <div class="eyebrow">PDFMate Dashboard</div>
+      <h1 id="greet">Good to see you.</h1>
+      <p class="lead">Manage PDF work, launch tools and keep your most-used actions one click away.</p>
+    </div>
+    <button class="btn pri add" data-open="auto"><svg viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></svg><span>Upload &amp; start</span></button>
+  </div>
+
+  <section class="grid stats" aria-label="Overview">
+    <div class="card spot stat rv" style="--i:1"><div class="t">Available tools<span class="ico" style="background:#f5f0ff;color:var(--p)"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/></svg></span></div><div class="v" id="nTools">0</div><small>PDF operations ready</small></div>
+    <div class="card spot stat rv" style="--i:2"><div class="t">Recent tools<span class="ico" style="background:#fffaeb;color:#d98a00"><svg viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></span></div><div class="v" id="nRecent">0</div><small>Saved on this device</small></div>
+    <div class="card spot stat rv" style="--i:3"><div class="t">Cloud files<span class="ico" style="background:#ecfdf3;color:#039855"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 15.5-2A5 5 0 0 1 18 20H7a5 5 0 0 1-3-8z"/></svg></span></div><div class="v">—</div><small>Sign in to see private files</small></div>
+    <div class="card spot stat rv" style="--i:4"><div class="t">Privacy mode<span class="ico" style="background:#eff8ff;color:#1570ef"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span></div><div class="v sm">Local-first</div><small>Cloud is always opt-in</small></div>
+  </section>
+
+  <section class="grid two">
+    <div class="card panel rv">
+      <div class="ph"><div><h2>Quick actions</h2><p>Most common PDF workflows</p></div><a class="link" href="#tools">View all tools →</a></div>
+      <div class="grid qa" id="qa"></div>
+    </div>
+    <div class="card panel rv" id="favourites" style="--i:1;scroll-margin-top:84px">
+      <div class="ph"><div><h2>My favourites</h2><p>Your recent PDF actions</p></div><svg viewBox="0 0 24 24" style="color:#667085"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></svg></div>
+      <div class="fav" id="fav"></div>
+    </div>
+  </section>
+
+  <section id="tools" class="card panel rv">
+    <div class="ph"><div><div class="eyebrow">PDF Toolkit</div><h2 style="font-size:24px;font-weight:800;margin-top:4px">All tools</h2><p style="font-size:14px">Choose an operation and work directly in the PDF workspace.</p></div><span class="count" id="count" aria-live="polite"></span></div>
+    <div class="m-search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input id="q2" type="search" autocomplete="off" aria-label="Search PDF tools" placeholder="Search tools…"></div>
+    <div class="chips" role="tablist" aria-label="Tool categories" id="chips"></div>
+    <div class="grid tools" id="tools-grid" role="tabpanel"></div>
+  </section>
+
+  <section id="cloud" class="grid">
+    <div class="card panel rv">
+      <div class="ph"><div><h2>My documents</h2><p>Private cloud files saved by you</p></div><button class="btn ghost" style="min-height:36px;padding:0 12px;font-size:12px" data-account>Sign in</button></div>
+      <div class="fav" style="margin-top:20px"><div class="empty" style="padding:32px 16px;font-size:14px">No cloud files yet. Sign in and save a document from any tool.</div></div>
+    </div>
+    <div id="workflow" class="rv" style="--i:1">
+      <div class="eyebrow">Workflow</div><h2>Simple, controlled PDF flow</h2>
+      <div class="step"><i>01</i><div><b>Choose a tool</b><span>No unnecessary uploads for browser-supported operations.</span></div></div>
+      <div class="step"><i>02</i><div><b>Process in the browser</b><span>No unnecessary uploads for browser-supported operations.</span></div></div>
+      <div class="step"><i>03</i><div><b>Download or save privately</b><span>No unnecessary uploads for browser-supported operations.</span></div></div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap" id="v-app" hidden></div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<div id="off" class="off" role="status" hidden>You're offline — on-device tools still work.</div>
+<nav class="bnav" aria-label="Mobile navigation"><div>
+  <a href="#dashboard" data-nav="dashboard"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</a>
+  <a href="#tools" data-nav="tools"><svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>Tools</a>
+  <a href="#/files" data-nav="files"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 15.5-2A5 5 0 0 1 18 20H7a5 5 0 0 1-3-8z"/></svg>Files</a>
+  <a href="#/account" data-nav="account" data-account><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.4-4 4-6 8-6s6.6 2 8 6"/></svg>Account</a>
+</div></nav>
+<footer id="privacy">PDFMate · Privacy-first PDF workspace · Browser-first processing · <a href="https://pdfmate-flax.vercel.app/privacy" style="text-decoration:underline">Privacy notice</a></footer>
+</main>
+</div>
+
+<script>
+(function(){
+"use strict";
+// Hosted PDF workspace (same URL the Capacitor wrapper already uses). Tools open as WORKSPACE?tool=<id>.
+var WORKSPACE="https://pdfmate-flax.vercel.app/",KEY="pdfmate-recent-tools";
+var I={
+file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/>',
+layers:'<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/>',
+cut:'<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12"/>',
+trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+rot:'<path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/>',
+sort:'<path d="M8 4v16m-3-3 3 3 3-3M16 20V4m-3 3 3-3 3 3"/>',
+drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+hash:'<path d="M5 9h14M5 15h14M10 4 8 20M16 4l-2 16"/>',
+img:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 16-5-5-9 9"/>',
+pen:'<path d="m4 20 4-1 11-11-3-3L5 16z"/><path d="m14 6 3 3"/>',
+crop:'<path d="M6 2v16h16M2 6h16v16"/>',
+stack:'<path d="M4 14h16M4 18h16"/><path d="m12 3-8 5 8 5 8-5z"/>',
+max:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+form:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+scan:'<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8"/>',
+zap:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+spark:'<path d="m12 3 1.5 6.5L20 11l-6.5 1.5L12 19l-1.5-6.5L4 11l6.5-1.5z"/>',
+shield:'<path d="M12 3 20 6v5c0 5-3.4 8.6-8 10-4.6-1.4-8-5-8-10V6z"/>',
+wand:'<path d="m5 19 9-9M14 4v3M12.5 5.5h3M19 11v3M17.5 12.5h3"/>',
+arrow:'<path d="M5 12h14"/><path d="m13 6 6 6-6 6"/>'
+};
+function svg(k){return '<svg viewBox="0 0 24 24" aria-hidden="true">'+I[k]+'</svg>'}
+// [id, name, short description, icon, category] — original order preserved
+var T=[
+["redact","Redact PDF","Burn redactions into the page image","shield","Edit"],
+["auto","Auto PDF Mode","Inspect your PDF and pick the best next action","wand","Smart"],
+["merge","Merge PDF","Combine multiple PDFs in the order you choose","layers","Organize"],
+["split","Split PDF","Extract any page range into a new PDF","cut","Organize"],
+["extract","Extract Pages","Create a new PDF from selected pages","file","Organize"],
+["delete","Delete Pages","Remove selected pages from a PDF","trash","Organize"],
+["rotate","Rotate PDF","Rotate pages by 90, 180 or 270 degrees","rot","Organize"],
+["reorder","Reorder PDF","Enter the complete page order and export it","sort","Organize"],
+["watermark","Watermark","Add a light text watermark to every page","drop","Edit"],
+["numbers","Page Numbers","Add page numbers to the bottom of every page","hash","Edit"],
+["images","Images to PDF","Combine JPG and PNG images into one PDF","img","Convert"],
+["pdfimages","PDF to Images","Render every page as PNG or JPG in your browser","img","Convert"],
+["sign","Sign PDF","Draw a signature and place it on selected pages","pen","Edit"],
+["crop","Crop PDF","Trim equal margins from every page","crop","Organize"],
+["flatten","Flatten PDF","Flatten interactive form fields into the document","stack","Edit"],
+["resize","Resize PDF","Fit every page to A4, Letter, Legal or A5","max","Organize"],
+["edit","Edit PDF","Add text, highlights, boxes and lines to pages","edit","Edit"],
+["forms","Fill PDF Forms","Detect and fill standard AcroForm text fields locally","form","Edit"],
+["ocr","OCR PDF","Recognize text in scanned PDF pages locally","scan","Smart"],
+["compress","Optimize PDF","Use the secure qpdf worker for deeper optimization","zap","Smart"],
+["office","Office to PDF","Convert DOCX, XLSX or PPTX with the isolated worker","file","Convert"],
+["protect","Protect PDF","Password encryption via the secure server pipeline","lock","Smart"],
+["ai","AI PDF","Ask questions about selectable text in your PDF","spark","Smart"]
+];
+var cats=["All","Organize","Edit","Convert","Smart"],cat="All",term="";
+var $=function(s){return document.querySelector(s)},$$=function(s){return [].slice.call(document.querySelectorAll(s))};
+var byId={};T.forEach(function(t){byId[t[0]]=t});
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function recents(){try{var r=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(r)?r:[]}catch(e){return[]}}
+function openTool(id){
+  var t=byId[id];if(!t)return;
+  try{var n=[t[1]].concat(recents().filter(function(x){return x!==t[1]})).slice(0,6);localStorage.setItem(KEY,JSON.stringify(n))}catch(e){}
+  location.hash="#/tool/"+encodeURIComponent(id);
+}
+function account(){location.hash="#/account"}
+function renderQA(){
+  $("#qa").innerHTML=T.slice(0,6).map(function(t,i){return '<button class="qb spot rv" style="--i:'+i+'" data-open="'+t[0]+'"><span class="ic">'+svg(t[3])+'</span><span><b>'+esc(t[1])+'</b><em>'+esc(t[2])+'</em></span></button>'}).join("");
+}
+function renderFav(){
+  var r=recents().filter(function(n){return T.some(function(t){return t[1]===n})}).slice(0,6);
+  $("#nRecent").textContent=r.length;
+  $("#fav").innerHTML=r.length?r.map(function(n){var t=T.filter(function(x){return x[1]===n})[0];return '<button class="fb" data-open="'+t[0]+'"><span>'+esc(n)+'</span>'+svg("arrow")+'</button>'}).join(""):'<div class="empty">Open a tool and it will appear here.</div>';
+}
+function renderChips(){
+  $("#chips").innerHTML=cats.map(function(c){return '<button class="chip" role="tab" data-cat="'+c+'" aria-selected="'+(c===cat)+'" tabindex="'+(c===cat?0:-1)+'">'+c+'</button>'}).join("");
+}
+function match(t){var q=term.toLowerCase();return(cat==="All"||t[4]===cat)&&(!q||(t[1]+" "+t[2]+" "+t[4]).toLowerCase().indexOf(q)>-1)}
+function renderTools(){
+  var list=T.filter(match);
+  $("#count").textContent=list.length+(list.length===1?" tool":" tools");
+  $("#tools-grid").innerHTML=list.length?list.map(function(t,i){return '<button class="tool spot rv in" style="--i:'+Math.min(i,8)+'" data-open="'+t[0]+'"><div class="row"><span class="ic">'+svg(t[3])+'</span><span class="go">'+svg("arrow")+'</span></div><h3>'+esc(t[1])+'</h3><p>'+esc(t[2])+'</p></button>'}).join(""):'<div class="empty none">No tools match “'+esc(term)+'”.</div>';
+}
+function setTerm(v,src){term=v;["#q","#q2"].forEach(function(s){var e=$(s);if(e&&e!==src)e.value=v});renderTools()}
+// events
+document.addEventListener("click",function(e){
+  var o=e.target.closest("[data-open]");if(o){e.preventDefault();openTool(o.getAttribute("data-open"));return}
+  if(e.target.closest("[data-account]")){e.preventDefault();account();return}
+  var c=e.target.closest("[data-cat]");if(c){cat=c.getAttribute("data-cat");renderChips();renderTools();$("[data-cat='"+cat+"']").focus()}
+});
+$("#chips").addEventListener("keydown",function(e){
+  var k=e.key==="ArrowRight"?1:e.key==="ArrowLeft"?-1:0;if(!k)return;
+  e.preventDefault();cat=cats[(cats.indexOf(cat)+k+cats.length)%cats.length];renderChips();renderTools();$("[data-cat='"+cat+"']").focus();
+});
+["#q","#q2"].forEach(function(s){
+  var el=$(s);
+  el.addEventListener("input",function(){setTerm(el.value,el)});
+  el.addEventListener("keydown",function(e){
+    if(e.key==="Enter"){var f=T.filter(match)[0];if(f)openTool(f[0])}
+    if(e.key==="Escape"){el.value="";setTerm("",el);el.blur()}
+  });
+  el.addEventListener("focus",function(){if(term&&el===$("#q"))document.getElementById("tools").scrollIntoView({behavior:"smooth"})});
+});
+document.addEventListener("keydown",function(e){
+  var tag=(e.target.tagName||"").toLowerCase();
+  if(e.key==="/"&&tag!=="input"&&tag!=="textarea"){var q=$("#q");if(q&&q.offsetParent){e.preventDefault();q.focus()}}
+});
+// spotlight (pointer-follow) — pointer devices only
+document.addEventListener("pointermove",function(e){
+  var s=e.target.closest&&e.target.closest(".spot");if(!s)return;
+  var r=s.getBoundingClientRect();s.style.setProperty("--x",(e.clientX-r.left)+"px");s.style.setProperty("--y",(e.clientY-r.top)+"px");
+},{passive:true});
+// ---------- screens ----------
+var HK="pdfmate-history",OBK="pdfmate-onboarded",RMK="pdfmate-reduce-motion",MAX=52428800,blobs={},S={};
+function get(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function put(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function hist(){try{var r=JSON.parse(get(HK)||"[]");return Array.isArray(r)?r:[]}catch(e){return[]}}
+function saveHist(r){put(HK,JSON.stringify(r.slice(0,20)))}
+function fmt(n){return n<1024?n+" B":n<1048576?Math.round(n/1024)+" KB":(n/1048576).toFixed(1)+" MB"}
+function toast(m){var t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){t.hidden=true},3200)}
+function applyRM(){document.documentElement.toggleAttribute("data-rm",get(RMK)==="1")}
+function net(){$("#off").hidden=navigator.onLine}
+var PG=[["pages","text","Page range","e.g. 1-3, 5"]];
+var O={split:PG,extract:PG,"delete":PG,rotate:[["pages","text","Pages (blank = all)","e.g. 1-2"],["deg","select","Rotation",["90","180","270"]]],reorder:[["order","text","New page order","e.g. 3,1,2"]],watermark:[["text","text","Watermark text","CONFIDENTIAL"]],sign:[["pages","text","Pages","e.g. 1"]],resize:[["size","select","Page size",["A4","Letter","Legal","A5"]]],crop:[["margin","text","Margin to trim (pt)","e.g. 20"]],pdfimages:[["fmt","select","Image format",["PNG","JPG"]]],images:[["size","select","Page size",["Fit image","A4","Letter"]],["quality","select","Quality",["High","Medium","Small"]]]};
+var ACC={images:"image/png,image/jpeg",office:".doc,.docx,.xls,.xlsx,.ppt,.pptx"},MULTI={merge:1,images:1},MIN={merge:2};
+function accept(id){return ACC[id]||".pdf,application/pdf"}
+function okType(f,id){if(id==="images"&&/\.(png|jpe?g)$/i.test(f.name))return true;return accept(id).split(",").some(function(x){return x.charAt(0)==="."?f.name.toLowerCase().slice(-x.length)===x:x==="application/pdf"?(f.type===x||/\.pdf$/i.test(f.name)):f.type===x})}
+// Engine contract: window.PDFMateEngine = {supports(id)->bool, run(id,files,opts,progress)->Promise<{blob,name}>}
+function engineFor(id){var E=window.PDFMateEngine;if(E&&E.supports&&E.supports(id))return function(f,o,p){return E.run(id,f,o,p)};return NATIVE[id]||null}
+// Native, dependency-free Images -> PDF (JPEG-embedded, works offline)
+async function imgsToPdf(files,o,prog){
+  var enc=new TextEncoder(),parts=[],len=0,off=[],n=files.length,q={High:.92,Medium:.8,Small:.6}[o.quality]||.92,A={A4:[595,842],Letter:[612,792]}[o.size];
+  function w(x){var b=typeof x==="string"?enc.encode(x):x;parts.push(b);len+=b.length}
+  function ob(k,s){off[k]=len;w(k+" 0 obj\n"+s+"\nendobj\n")}
+  w("%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n");
+  var kids=[],i;for(i=0;i<n;i++)kids.push((3+i*3)+" 0 R");
+  ob(1,"<</Type/Catalog/Pages 2 0 R>>");ob(2,"<</Type/Pages/Count "+n+"/Kids["+kids.join(" ")+"]>>");
+  for(i=0;i<n;i++){
+    prog(i/n,"Processing image "+(i+1)+" of "+n+"…");
+    var bm;try{bm=await createImageBitmap(files[i])}catch(e){throw new Error("Couldn't read "+files[i].name+".")}
+    var sc=Math.min(1,4000/Math.max(bm.width,bm.height)),W=Math.round(bm.width*sc),H=Math.round(bm.height*sc),c=document.createElement("canvas");
+    c.width=W;c.height=H;var x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);x.drawImage(bm,0,0,W,H);if(bm.close)bm.close();
+    var blob=await new Promise(function(r){c.toBlob(r,"image/jpeg",q)});if(!blob)throw new Error("Couldn't encode "+files[i].name+".");
+    var jb=new Uint8Array(await blob.arrayBuffer()),pw=W*.75,ph=H*.75,dw=pw,dh=ph,dx=0,dy=0;
+    if(A){var ld=W>H;pw=ld?A[1]:A[0];ph=ld?A[0]:A[1];var s=Math.min((pw-48)/W,(ph-48)/H);dw=W*s;dh=H*s;dx=(pw-dw)/2;dy=(ph-dh)/2}
+    var b=3+i*3,cs="q "+dw.toFixed(2)+" 0 0 "+dh.toFixed(2)+" "+dx.toFixed(2)+" "+dy.toFixed(2)+" cm /Im0 Do Q";
+    ob(b,"<</Type/Page/Parent 2 0 R/MediaBox[0 0 "+pw.toFixed(2)+" "+ph.toFixed(2)+"]/Resources<</XObject<</Im0 "+(b+2)+" 0 R>>>>/Contents "+(b+1)+" 0 R>>");
+    ob(b+1,"<</Length "+cs.length+">>\nstream\n"+cs+"\nendstream");
+    off[b+2]=len;w((b+2)+" 0 obj\n<</Type/XObject/Subtype/Image/Width "+W+"/Height "+H+"/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length "+jb.length+">>\nstream\n");w(jb);w("\nendstream\nendobj\n");
+  }
+  var N=3+n*3,xr=len,t="xref\n0 "+N+"\n0000000000 65535 f \n";
+  for(var k=1;k<N;k++)t+=String(off[k]).padStart(10,"0")+" 00000 n \n";
+  w(t+"trailer\n<</Size "+N+"/Root 1 0 R>>\nstartxref\n"+xr+"\n%%EOF");
+  prog(1,"Finishing…");
+  return{blob:new Blob(parts,{type:"application/pdf"}),name:(n===1?files[0].name.replace(/\.[^.]+$/,""):"images")+".pdf"};
+}
+var NATIVE={images:imgsToPdf};
+// tool flow: 1 upload · 2 options · 3 processing · 4 done · 5 error
+function flow(id){
+  S={id:id,files:[],step:1,vals:{},tok:0};
+  if(history.state&&history.state.step)try{history.replaceState({i:cur,k:"tool"},"")}catch(e){}
+  (O[id]||[]).forEach(function(f){if(f[1]==="select")S.vals[f[0]]=f[3][0]});
+  draw();
+}
+function stepsBar(n){return '<div class="eyebrow">Step '+n+' of 4 · '+["Upload","Options","Processing","Done"][n-1]+'</div><div class="steps" aria-hidden="true">'+[1,2,3,4].map(function(i){return '<i class="'+(i<=n?"on":"")+'"></i>'}).join("")+'</div>'}
+function fileRow(f,i){var m=MULTI[S.id]&&S.files.length>1;return '<div class="file">'+svg("file")+'<span><b>'+esc(f.name)+'</b><span class="mut">'+fmt(f.size)+'</span></span>'+(m?'<button class="ib" data-act="up" data-i="'+i+'" aria-label="Move up"'+(i?"":" disabled")+'><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button><button class="ib" data-act="dn" data-i="'+i+'" aria-label="Move down"'+(i<S.files.length-1?"":" disabled")+'><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>':'')+'<button class="ib" data-act="rm" data-i="'+i+'" aria-label="Remove '+esc(f.name)+'">'+svg("trash")+'</button></div>'}
+function s1(){var m=MULTI[S.id],min=MIN[S.id]||1;
+  return '<label class="drop" id="drop" for="fi">'+svg("file")+'<b>Drop '+(m?"files":"a file")+' here or tap to choose</b><span class="mut">'+(m?"Select one or more":"Select one file")+' · up to 50 MB each</span></label><input id="fi" class="sr" type="file" accept="'+accept(S.id)+'"'+(m?" multiple":"")+'>'
+  +(S.err1?'<div class="note err" role="alert" style="margin-top:12px">'+esc(S.err1)+'</div>':'')
+  +'<div class="fav">'+S.files.map(fileRow).join("")+'</div>'
+  +'<div class="row2"><button class="btn pri" data-act="next"'+(S.files.length<min?" disabled":"")+'>Continue</button></div>'
+  +(S.files.length<min&&min>1?'<p class="mut">Add at least '+min+' files.</p>':'')}
+function s2(){var o=O[S.id]||[],tot=S.files.reduce(function(a,f){return a+f.size},0);
+  return '<div class="card panel"><h2>'+(o.length?"Options":"Ready to go")+'</h2><p class="mut">'+S.files.length+(S.files.length===1?" file":" files")+' · '+fmt(tot)+'</p>'
+  +o.map(function(f){var v=S.vals[f[0]]||"",id="o_"+f[0];return '<div class="fld"><label for="'+id+'">'+f[2]+'</label>'+(f[1]==="select"?'<select id="'+id+'" data-opt="'+f[0]+'">'+f[3].map(function(x){return '<option'+(x===(v||f[3][0])?" selected":"")+'>'+x+'</option>'}).join("")+'</select>':'<input id="'+id+'" data-opt="'+f[0]+'" value="'+esc(v)+'" placeholder="'+esc(f[3])+'" autocomplete="off">')+'</div>'}).join("")
+  +'</div><div class="row2"><button class="btn ghost" data-act="prev">Back</button><button class="btn pri" data-act="run">Start</button></div>'}
+function s3(){return '<div class="card panel" role="status"><h2>Working on it…</h2><p class="mut" id="plab">Starting…</p><div class="bar"><i id="bar"></i></div><div class="row2"><button class="btn ghost" data-act="cancel">Cancel</button></div></div>'}
+function s4(){var r=S.res;return '<div class="card panel" style="text-align:center"><div class="okc"><svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg></div><h2>Your file is ready</h2><p class="mut">'+esc(r.name)+' · '+fmt(r.blob.size)+'</p><div class="row2" style="justify-content:center"><button class="btn pri" data-act="dl">Download</button>'+(navigator.canShare?'<button class="btn ghost" data-act="share">Share</button>':'')+'</div><div class="row2" style="justify-content:center"><button class="btn ghost" data-act="again">Process another</button><button class="btn ghost" data-go="#/files">My documents</button></div></div>'}
+function s5(){return '<div class="note err" role="alert"><b>Something went wrong.</b> '+esc(S.err||"Processing failed.")+'</div><div class="row2"><button class="btn ghost" data-act="again">Start over</button><button class="btn pri" data-act="retry">Try again</button></div>'}
+function hosted(t){return '<div class="note" style="margin-top:16px"><b>Runs in the full PDFMate workspace.</b> This tool needs the hosted engine.</div><div class="card panel" style="margin-top:12px"><h2>'+esc(t[1])+'</h2><p class="mut">'+esc(t[2])+'. Continue in the workspace to choose your file and download the result.</p><div class="row2"><button class="btn pri" data-act="ws">Continue in workspace</button><button class="btn ghost" data-back="#/tools">Back</button></div>'+(navigator.onLine?"":'<p class="note err" role="alert" style="margin-top:12px">You\'re offline — connect to the internet to continue.</p>')+'</div>'}
+function draw(){
+  var t=byId[S.id],v=$("#v-app");
+  if(!t){v.innerHTML='<div class="narrow"><h1 id="ttl" tabindex="-1">Tool not found</h1><p class="lead">That tool doesn\'t exist.</p><div class="row2"><button class="btn pri" data-go="#/tools">Browse tools</button></div></div>';return}
+  var eng=engineFor(S.id),b=!eng?hosted(t):S.step===1?s1():S.step===2?s2():S.step===3?s3():S.step===4?s4():s5();
+  v.innerHTML='<div class="narrow"><button class="back" data-back="#/tools">← All tools</button><div class="brand" style="margin-top:4px"><span class="ico" style="width:48px;height:48px;background:#f5f0ff;color:var(--p)">'+svg(t[3])+'</span><div><h1 id="ttl" tabindex="-1" style="font-size:26px;margin:0">'+esc(t[1])+'</h1><p class="mut" style="margin:2px 0 0">'+esc(t[2])+'</p></div></div>'+(eng&&S.step<5?stepsBar(S.step):"")+b+'</div>';
+  if(S.focus){S.focus=0;var h=$("#ttl");if(h)h.focus({preventScroll:true});window.scrollTo(0,0)}
+}
+function addFiles(fl){
+  var ok=[],errs=[];
+  [].slice.call(fl).forEach(function(f){if(!okType(f,S.id))errs.push(f.name+" isn't a supported file type.");else if(!f.size)errs.push(f.name+" is empty.");else if(f.size>MAX)errs.push(f.name+" is larger than 50 MB.");else ok.push(f)});
+  S.files=MULTI[S.id]?S.files.concat(ok):(ok.length?ok.slice(0,1):S.files);S.err1=errs.join(" ");draw();
+}
+async function run(){
+  var tok=++S.tok,eng=engineFor(S.id);S.step=3;try{history.pushState({i:hIdx+1,k:"tool",step:3},"");hIdx++;kinds[hIdx]="tool"}catch(e){}S.focus=1;draw();
+  var bar=$("#bar"),lab=$("#plab");
+  try{
+    var res=await eng(S.files,S.vals,function(p,msg){if(S.tok!==tok)throw new Error("cancel");if(bar)bar.style.width=Math.round(p*100)+"%";if(msg&&lab)lab.textContent=msg});
+    if(!res||!res.blob)throw new Error("The engine returned no file.");
+    if(S.tok!==tok)return;
+    var id="r"+Date.now();blobs[id]=res;S.res=res;
+    var r=hist();r.unshift({id:id,name:res.name,tool:S.id,size:res.blob.size,t:Date.now()});saveHist(r);
+    S.step=4;markStep(4);S.focus=1;draw();
+  }catch(e){if(S.tok!==tok||e.message==="cancel")return;S.err=e.message;S.step=5;markStep(5);S.focus=1;draw()}
+}
+function dl(r){var u=URL.createObjectURL(r.blob),a=document.createElement("a");a.href=u;a.download=r.name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000)}
+async function share(r){try{var f=new File([r.blob],r.name,{type:r.blob.type});if(navigator.canShare&&navigator.canShare({files:[f]}))await navigator.share({files:[f],title:r.name});else toast("Sharing isn't available here — use Download.")}catch(e){if(e.name!=="AbortError")toast("Couldn't share the file.")}}
+function files(){
+  var r=hist();
+  $("#v-app").innerHTML='<div class="narrow"><div class="eyebrow">My documents</div><h1 id="ttl" tabindex="-1" style="margin-top:4px">Files from this device</h1><p class="lead">Results you create here are listed below. Files are never uploaded and are not kept after you close the app.</p>'
+  +(r.length?'<div class="fav" style="margin-top:20px">'+r.map(function(x){var t=byId[x.tool];return '<div class="file">'+svg("file")+'<span><b>'+esc(x.name)+'</b><span class="mut">'+esc(t?t[1]:"")+' · '+fmt(x.size)+' · '+new Date(x.t).toLocaleDateString()+'</span></span>'+(blobs[x.id]?'<button class="btn ghost" data-act="hdl" data-id="'+x.id+'">Download</button>':'<span class="mut" style="padding-right:8px">Not kept</span>')+'</div>'}).join("")+'</div><div class="row2"><button class="btn ghost" data-act="hclr">Clear history</button></div>'
+  :'<div class="empty" style="margin-top:20px;padding:40px 16px;font-size:14px">Nothing here yet. Run a tool and your result will show up.<div class="row2" style="justify-content:center"><button class="btn pri" data-go="#/tools">Browse tools</button></div></div>')+'</div>';
+}
+function srow(a,b,c){return '<div class="srow"><div><b>'+a+'</b><span class="mut">'+b+'</span></div>'+c+'</div>'}
+function acct(){
+  var rm=get(RMK)==="1";
+  $("#v-app").innerHTML='<div class="narrow"><div class="eyebrow">Account &amp; settings</div><h1 id="ttl" tabindex="-1" style="margin-top:4px">Your account</h1><p class="lead">Sign in to the PDFMate workspace to save documents privately to the cloud. Everything else works without an account.</p>'
+  +'<div class="card panel" style="margin-top:20px"><h2>Cloud account</h2><p class="mut">Sign-in opens in the hosted workspace.</p><div class="row2"><button class="btn pri" data-act="auth">Sign in or manage account</button></div></div>'
+  +'<div class="card panel" style="margin-top:16px"><h2>Settings</h2>'
+  +srow("Reduce motion","Turn off animations in this app.",'<button class="sw" role="switch" aria-checked="'+rm+'" aria-label="Reduce motion" data-act="motion"><i></i></button>')
+  +srow("Recent tools","Clear the list shown on Home.",'<button class="btn ghost" data-act="clrrec">Clear</button>')
+  +srow("File history","Clear results listed under My documents.",'<button class="btn ghost" data-act="hclr">Clear</button>')
+  +srow("Welcome tour","Replay the intro.",'<button class="btn ghost" data-act="intro">Replay</button>')
+  +'</div><div class="card panel" style="margin-top:16px"><h2>About</h2><p class="mut">PDFMate 1.0.0 · On-device tools never upload your files. Server-assisted tools (optimize, protect, Office to PDF) send the file you pick to the PDFMate worker to process it, and AI PDF sends the text you ask about to an AI provider.</p></div></div>';
+}
+// history: every in-app entry carries {i: index, k: kind[, step]} so Back/hardware Back behave predictably
+var hIdx=-1,kinds=[],toTools=false;
+function track(kind){var st=history.state;if(st&&typeof st.i==="number")hIdx=st.i;else{hIdx++;try{history.replaceState({i:hIdx,k:kind},"")}catch(e){}}kinds[hIdx]=kind}
+function goBack(fb){var j=hIdx-1;while(j>=0&&kinds[j]!=="home")j--;if(j>=0){toTools=fb==="#/tools";history.go(j-hIdx)}else location.hash=fb}
+function markStep(n){try{history.replaceState({i:hIdx,k:"tool",step:n},"")}catch(e){}}
+function pushStep(n){try{history.pushState({i:hIdx+1,k:"tool",step:n},"");hIdx++;kinds[hIdx]="tool"}catch(e){}S.step=n;S.focus=1;draw()}
+function stepBack(n){var st=history.state;if(st&&st.k==="tool"&&st.step&&st.step>n)history.back();else{S.step=n;S.focus=1;draw()}}
+window.addEventListener("popstate",function(){
+  var st=history.state;if(st&&typeof st.i==="number")hIdx=st.i;
+  var m=location.hash.match(/^#\/tool\/([^/]+)$/);
+  if(m&&S.id&&!$("#v-app").hidden&&decodeURIComponent(m[1])===S.id){var n=(st&&st.step)||1;if(!S.files.length)n=1;if(S.step!==n){S.tok++;S.step=n;S.focus=1;draw()}}
+});
+var V=$("#v-app");
+V.addEventListener("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.getAttribute("data-act"),i=+b.getAttribute("data-i");
+  if(a==="next")pushStep(2);else if(a==="prev")stepBack(1);else if(a==="run")run();
+  else if(a==="cancel"){S.tok++;stepBack(2);toast("Cancelled")}
+  else if(a==="rm"){S.files.splice(i,1);draw()}
+  else if(a==="up"||a==="dn"){var j=a==="up"?i-1:i+1,x=S.files[i];if(S.files[j]){S.files[i]=S.files[j];S.files[j]=x;draw()}}
+  else if(a==="dl")dl(S.res);else if(a==="share")share(S.res);
+  else if(a==="again")flow(S.id);else if(a==="retry")stepBack(2);
+  else if(a==="ws")location.href=WORKSPACE+"?tool="+encodeURIComponent(S.id);
+  else if(a==="auth")location.href=WORKSPACE+"auth";
+  else if(a==="hdl"){var h=blobs[b.getAttribute("data-id")];if(h)dl(h)}
+  else if(a==="hclr"){saveHist([]);blobs={};if(location.hash==="#/files")files();toast("History cleared")}
+  else if(a==="clrrec"){put(KEY,"[]");toast("Recent tools cleared")}
+  else if(a==="motion"){put(RMK,get(RMK)==="1"?"0":"1");applyRM();acct()}
+  else if(a==="intro")onboard(true);
+});
+V.addEventListener("input",function(e){var k=e.target.getAttribute&&e.target.getAttribute("data-opt");if(k)S.vals[k]=e.target.value});
+V.addEventListener("change",function(e){if(e.target.id==="fi"){addFiles(e.target.files);e.target.value=""}});
+["dragover","dragleave","drop"].forEach(function(n){V.addEventListener(n,function(e){var d=e.target.closest&&e.target.closest("#drop");if(!d)return;e.preventDefault();if(n==="dragover")d.classList.add("over");else{d.classList.remove("over");if(n==="drop")addFiles(e.dataTransfer.files)}})});
+document.addEventListener("click",function(e){var g=e.target.closest("[data-go]");if(g){e.preventDefault();location.hash=g.getAttribute("data-go");return}var b=e.target.closest("[data-back]");if(b){e.preventDefault();goBack(b.getAttribute("data-back"))}});
+// onboarding
+var OB=[["Private by default","Most tools run on your device. Your files stay with you unless you choose to save them.","shield"],["One workspace, "+T.length+" tools","Merge, split, sign, edit, OCR and more. Find anything with search or categories.","layers"],["Start in seconds","Pick a tool, add a file and download the result. Cloud sign-in is always optional.","zap"]];
+function onboard(force){
+  if(!force&&get(OBK))return;
+  var i=0,d=document.createElement("div"),prev=document.activeElement;
+  d.className="ob";d.setAttribute("role","dialog");d.setAttribute("aria-modal","true");d.setAttribute("aria-label","Welcome to PDFMate");
+  function close(){put(OBK,"1");d.remove();if(prev&&prev.focus)prev.focus()}
+  function show(){var s=OB[i];d.innerHTML='<div class="obc"><div class="okc">'+svg(s[2])+'</div><h2>'+s[0]+'</h2><p>'+s[1]+'</p><div class="dots" aria-hidden="true">'+OB.map(function(_,k){return '<i class="'+(k===i?"on":"")+'"></i>'}).join("")+'</div><div class="row2" style="justify-content:center;margin-top:0"><button class="btn ghost" data-ob="skip">Skip</button><button class="btn pri" data-ob="next">'+(i<OB.length-1?"Next":"Get started")+'</button></div></div>';d.querySelector("[data-ob=next]").focus()}
+  d.addEventListener("click",function(e){var b=e.target.closest("[data-ob]");if(!b)return;if(b.getAttribute("data-ob")==="skip"||i>=OB.length-1)close();else{i++;show()}});
+  d.addEventListener("keydown",function(e){if(e.key==="Escape")close();if(e.key==="Tab"){var f=d.querySelectorAll("button");if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&document.activeElement===f[f.length-1]){e.preventDefault();f[0].focus()}}});
+  document.body.appendChild(d);show();
+}
+// router: #/ home · #/tools · #/tool/<id> · #/files · #/account (plain #anchors scroll on home)
+function setNav(id){$$("[data-nav]").forEach(function(a){a.setAttribute("aria-current",a.getAttribute("data-nav")===id)})}
+function route(){
+  var h=location.hash,m=h.match(/^#\/(tool|files|account|tools)(?:\/([^/]+))?$/),r=m?m[1]:"",home=$("#dashboard"),app=$("#v-app");
+  track(r==="tools"||!r?"home":r);
+  if(S.tok!==undefined&&r!=="tool")S.tok++;
+  if(!r||r==="tools"){
+    var was=!home.hidden;home.hidden=false;app.hidden=true;document.title="PDFMate — PDF tools, without the busywork";renderFav();
+    var el=(r==="tools"||toTools)?document.getElementById("tools"):(h.length>1&&h.charAt(1)!=="/"?document.getElementById(h.slice(1)):null);
+    toTools=false;
+    if(el)el.scrollIntoView();else if(!was)window.scrollTo(0,0);
+    if(r==="tools")setNav("tools");else if(!was)setNav("dashboard");
+    return;
+  }
+  home.hidden=true;app.hidden=false;S.focus=1;
+  if(r==="tool"){var id="";try{id=decodeURIComponent(m[2]||"")}catch(e){}flow(id);document.title=(byId[id]?byId[id][1]:"Tool")+" — PDFMate"}
+  else if(r==="files"){files();document.title="My documents — PDFMate"}
+  else{acct();document.title="Account — PDFMate"}
+  setNav(r==="tool"?"tools":r);window.scrollTo(0,0);var t=$("#ttl");if(t)t.focus({preventScroll:true});
+}
+window.addEventListener("hashchange",route);
+window.addEventListener("online",net);window.addEventListener("offline",net);
+// init
+var h=new Date().getHours();$("#greet").textContent=(h<12?"Good morning":h<18?"Good afternoon":"Good evening")+".";
+$("#nTools").textContent=T.length;
+renderQA();renderFav();renderChips();renderTools();
+// reveal on scroll + active nav
+if("IntersectionObserver"in window){
+  var rv=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add("in");rv.unobserve(x.target)}})},{threshold:.08});
+  $$(".rv:not(.in)").forEach(function(n){rv.observe(n)});
+  var cur=function(id){$$("[data-nav]").forEach(function(a){a.setAttribute("aria-current",a.getAttribute("data-nav")===id)})};
+  var nv=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting)cur(x.target.id)})},{rootMargin:"-40% 0px -55% 0px"});
+  ["dashboard","tools","cloud"].forEach(function(id){nv.observe(document.getElementById(id))});
+  cur("dashboard");
+}else{$$(".rv").forEach(function(n){n.classList.add("in")})}
+applyRM();net();route();onboard();
+// refresh recents when returning to the app
+document.addEventListener("visibilitychange",function(){if(!document.hidden)renderFav()});
+})();
+</script>
+</body>
+</html>

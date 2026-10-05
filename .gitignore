@@ -1,0 +1,20 @@
+# dependencies & build
+node_modules/
+.next/
+out/
+build/
+www/
+android/
+*.tsbuildinfo
+# secrets / local env
+.env
+.env.*
+!.env.example
+# generated OCR assets (scripts/copy-ocr-assets.mjs)
+public/ocr/
+public/pdfjs/
+# misc
+.DS_Store
+.vercel/
+coverage/
+npm-debug.log*
