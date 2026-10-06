@@ -1,4 +1,4 @@
-FROM node:22-bookworm-slim
+FROM node:25-bookworm-slim
 RUN apt-get update \
  && apt-get install -y --no-install-recommends qpdf libreoffice-core libreoffice-writer libreoffice-calc libreoffice-impress fonts-liberation fonts-dejavu-core tini \
  && rm -rf /var/lib/apt/lists/*
