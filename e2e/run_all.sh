@@ -11,7 +11,7 @@ spawn() { local dir="$1"; shift; setsid bash -c 'cd "$0" && exec env "$@"' "$dir
 port_free() { if curl -s -m 2 -o /dev/null "$1"; then echo "port in use: $1 (stop the other process first)"; exit 1; fi; }
 wait_http() { for _ in $(seq 1 60); do curl -sf -o /dev/null "$1" && return 0; sleep 1; done; echo "timeout waiting for $1"; return 1; }
 stop_all() { cleanup; PIDS=(); sleep 2; }
-suite() { local name="$1"; shift; echo "=== $name"; "$@" >/tmp/e2e-suite.log 2>&1; local rc=$?; grep -E "^FAIL|passed|RESULT|violations|Traceback" /tmp/e2e-suite.log || true; if [ $rc -ne 0 ]; then FAILED+=("$name"); fi; }
+suite() { local name="$1"; shift; echo "=== $name"; "$@" >/tmp/e2e-suite.log 2>&1; local rc=$?; grep -E "^FAIL|passed|RESULT|violations|Traceback" /tmp/e2e-suite.log || true; if [ $rc -ne 0 ]; then FAILED+=("$name"); echo "--- last lines of the failing suite log ($name):"; tail -25 /tmp/e2e-suite.log; echo "---"; fi; }
 bash e2e/make_fixtures.sh >/dev/null
 APP=http://localhost:3100
 port_free $APP/api/health; port_free http://127.0.0.1:8099/healthz; port_free http://localhost:8200/

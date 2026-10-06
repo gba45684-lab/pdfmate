@@ -16,6 +16,7 @@ for(let i=1;i<=3;i++){const p=d.addPage([595,842]);p.drawText("Page "+i+" PDFMat
 fs.writeFileSync("/tmp/e2e/sample.pdf",await d.save());
 const f2=await PDFDocument.create();const pg=f2.addPage([400,300]);f2.getForm().createTextField("fullname").addToPage(pg,{x:50,y:200,width:200,height:24});
 fs.writeFileSync("/tmp/e2e/form.pdf",await f2.save())})()' )
+python3 -c "d=open('/tmp/e2e/sample.pdf','rb').read(); open('/tmp/e2e/big.pdf','wb').write(d+b'\n%'+b'A'*6_500_000+b'\n')"
 printf 'Hello from a Word document.\nSecond line.\n' > hello.txt
 soffice --headless --convert-to docx --outdir /tmp/e2e hello.txt >/dev/null 2>&1 || echo "soffice missing: the office test will fail"
 echo "fixtures ready in /tmp/e2e"

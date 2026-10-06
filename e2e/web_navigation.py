@@ -6,6 +6,14 @@ def new(b,w,h):
     ctx=b.new_context(viewport={"width":w,"height":h}); pg=ctx.new_page(); errs=[]
     pg.on("pageerror",lambda e:errs.append(str(e))); pg.on("console",lambda m: errs.append(m.text) if m.type=="error" and not m.text.startswith("Failed to load resource") else None)
     return pg,errs
+def settle(pg):
+    """Wait until smooth scrolling has stopped (scrollY unchanged for 300 ms) so positions are measured at rest, even on slow CI."""
+    last = None; stable = 0
+    for _ in range(40):
+        y = pg.evaluate("window.scrollY")
+        stable = stable + 1 if y == last else 0
+        if stable >= 3: return
+        last = y; pg.wait_for_timeout(100)
 def run(b,w,h,L):
     pg,errs=new(b,w,h); pg.goto(B+"/"); pg.wait_for_selector("h1"); pg.wait_for_timeout(500)
     ck(f"[{L}] page styled + no script errors", pg.evaluate("getComputedStyle(document.body).backgroundColor")=="rgb(246, 247, 251)" and not errs, errs)
@@ -13,7 +21,7 @@ def run(b,w,h,L):
     # ---- menu
     if w>=1024:
         for lab,target in (("PDF Tools","#tools"),("My Documents","#cloud"),("Favourites","#favourites"),("Dashboard","#dashboard")):
-            pg.locator("aside a",has_text=lab).first.click(); pg.wait_for_timeout(700)
+            pg.locator("aside a",has_text=lab).first.click(); settle(pg)
             t=top(target); ck(f"[{L}] sidebar '{lab}' scrolls to {target}", pg.url.endswith(target) and t is not None and -10<=t<=220 or (target=="#cloud" and t is not None and 0<=t<=pg.viewport_size["height"]-100), f"url={pg.url} top={t}")
         pg.locator("aside a",has_text="AI PDF").click(); pg.wait_for_timeout(300)
         ck(f"[{L}] sidebar 'AI PDF' opens the AI tool", pg.locator("[role=dialog][aria-label='AI PDF']").count()==1)
@@ -27,7 +35,7 @@ def run(b,w,h,L):
         pg.locator("aside a",has_text="Account & Cloud").click(); pg.wait_for_url("**/auth"); ck(f"[{L}] sidebar 'Account & Cloud' -> /auth", "/auth" in pg.url)
     else:
         for lab,target in (("Tools","#tools"),("Cloud","#cloud"),("Home","#dashboard")):
-            pg.locator("nav a:visible",has_text=lab).first.click(); pg.wait_for_timeout(700); t=top(target)
+            pg.locator("nav a:visible",has_text=lab).first.click(); settle(pg); t=top(target)
             ck(f"[{L}] bottom nav '{lab}' scrolls to {target}", pg.url.endswith(target) and t is not None and -10<=t<=220, f"url={pg.url} top={t}")
         pg.locator("nav a:visible",has_text="Account").click(); pg.wait_for_url("**/auth"); ck(f"[{L}] bottom nav 'Account' -> /auth", "/auth" in pg.url)
     ck(f"[{L}] /auth has a way back", pg.locator("a",has_text="Back to PDFMate").count()==1)
