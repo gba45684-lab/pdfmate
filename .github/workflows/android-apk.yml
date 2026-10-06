@@ -1,27 +1,30 @@
-name: PDFMate Android APK
+name: PDFMate Android
 
 on:
   push:
     branches: [main]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/android-apk.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  build-apk:
+  build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # Signed release artifacts are produced only when all four secrets exist.
+      HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+      WORKSPACE_HOST: ${{ vars.PDFMATE_WORKSPACE_HOST || 'pdfmate-flax.vercel.app' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+          node-version-file: .nvmrc
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "21"
@@ -29,37 +32,63 @@ jobs:
       - name: Install Capacitor
         run: npm install --no-save --ignore-scripts @capacitor/core@7.4.4 @capacitor/cli@7.4.4 @capacitor/android@7.4.4
 
-      - name: Create Capacitor Android wrapper
+      - name: Prepare native home and Capacitor config
         run: |
-          rm -rf android
-          mkdir -p public
-          cat > capacitor.config.ts <<'EOF'
+          rm -rf android www
+          mkdir -p www
+          cp mobile/index.html www/index.html
+          # Point the home screen at the configured workspace host.
+          sed -i "s#pdfmate-flax.vercel.app#${WORKSPACE_HOST}#g" www/index.html
+          cat > capacitor.config.ts <<EOF2
           import type { CapacitorConfig } from "@capacitor/cli";
 
           const config: CapacitorConfig = {
             appId: "com.pdfmate.app",
             appName: "PDFMate",
-            webDir: "public",
-            server: {
-              url: "https://pdfmate-flax.vercel.app/",
-              cleartext: false
-            },
-            android: {
-              backgroundColor: "#f6f7fb"
-            }
+            webDir: "www",
+            server: { allowNavigation: ["${WORKSPACE_HOST}"], cleartext: false },
+            android: { backgroundColor: "#f6f7fb", allowMixedContent: false, webContentsDebuggingEnabled: false }
           };
 
           export default config;
-          EOF
+          EOF2
           npx cap add android
+          # Branded launcher icons (legacy, round and adaptive) + adaptive background colour.
+          cp -r mobile/android-res/. android/app/src/main/res/
 
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: PDFMate-Android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Build signed release (APK + AAB)
+        if: env.HAS_KEYSTORE == 'true'
+        working-directory: android
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          ./gradlew assembleRelease bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.keystore" \
+            -Pandroid.injected.signing.store.password="$KS_PASS" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASS"
+          rm -f "$RUNNER_TEMP/release.keystore"
+
+      - name: Upload signed release
+        if: env.HAS_KEYSTORE == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDFMate-Android-release
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: error

@@ -1,7 +1,10 @@
 import {NextRequest,NextResponse} from "next/server";
 import {createServerClient} from "@supabase/ssr";
 import {cookies} from "next/headers";
+import {forbidden,sameOrigin} from "../../../../lib/guard";
 export async function POST(request:NextRequest){
+  if(!sameOrigin(request))return forbidden();
+  if(!process.env.NEXT_PUBLIC_SUPABASE_URL||!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)return NextResponse.json({error:"Cloud storage is not configured."},{status:503});
   const store=await cookies(); const response=NextResponse.next();
   const supabase=createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!,process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,{cookies:{getAll:()=>store.getAll(),setAll:items=>items.forEach(({name,value,options})=>response.cookies.set(name,value,options))}});
   const {data:{user}}=await supabase.auth.getUser(); if(!user)return NextResponse.json({error:"Unauthorized"},{status:401});

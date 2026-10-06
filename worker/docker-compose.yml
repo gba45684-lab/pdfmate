@@ -3,15 +3,21 @@ services:
     build: .
     restart: unless-stopped
     environment:
+      NODE_ENV: production
       PORT: 8080
-      PDF_WORKER_TOKEN: ${PDF_WORKER_TOKEN}
+      HOME: /tmp
+      PDF_WORKER_TOKEN: ${PDF_WORKER_TOKEN:?Set PDF_WORKER_TOKEN}
       MAX_FILE_BYTES: ${PDF_WORKER_MAX_FILE_BYTES:-52428800}
+      MAX_CONCURRENT_JOBS: ${PDF_WORKER_MAX_JOBS:-2}
     expose:
       - "8080"
     read_only: true
     tmpfs:
-      - /tmp:size=256m
+      - /tmp:size=512m,mode=1777
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    pids_limit: 256
+    mem_limit: 1536m
+    cpus: 1.5
