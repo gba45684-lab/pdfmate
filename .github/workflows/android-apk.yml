@@ -21,7 +21,7 @@ jobs:
       WORKSPACE_HOST: ${{ vars.PDFMATE_WORKSPACE_HOST || 'pdfmate-flax.vercel.app' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version-file: .nvmrc
       - uses: actions/setup-java@v4
